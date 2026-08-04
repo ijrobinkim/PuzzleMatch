@@ -1,7 +1,7 @@
 class_name BoardView
 extends Node2D
 
-const CELL_SIZE := 120.0
+const CELL_SIZE := 128.0
 const TILE_SCENE: PackedScene = preload("res://scenes/board/tile.tscn")
 
 var model: BoardModel
