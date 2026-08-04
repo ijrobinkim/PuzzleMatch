@@ -14,6 +14,6 @@ hframes = 6
 
 [node name="BonusOverlay" type="Sprite2D" parent="."]
 texture = ExtResource("3")
-centered = false
+position = Vector2(64, 64)
 hframes = 2
 visible = false
