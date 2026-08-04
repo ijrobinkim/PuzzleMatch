@@ -14,27 +14,41 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  GODOT_RELEASE: 4.7-stable
+
 jobs:
   export:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Godot and export templates
+        run: |
+          set -eux
+          curl -fL -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
+          unzip -q godot.zip
+          chmod +x "Godot_v${GODOT_RELEASE}_linux.x86_64"
+          GODOT_BIN="$PWD/Godot_v${GODOT_RELEASE}_linux.x86_64"
+
+          curl -fL -o templates.tpz "https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+          RUNTIME_VERSION=$("$GODOT_BIN" --version | sed -E 's/\.official.*//')
+          TEMPLATES_DIR="$HOME/.local/share/godot/export_templates/$RUNTIME_VERSION"
+          mkdir -p "$TEMPLATES_DIR"
+          unzip -q -j templates.tpz -d "$TEMPLATES_DIR"
+
+          echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
+
       - name: Export Web build
-        id: export
-        uses: firebelley/godot-export@v5.2.1
-        with:
-          godot_executable_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
-          godot_export_templates_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz
-          relative_project_path: ./
-          use_preset_export_path: true
-          export_debug: false
-          verbose: true
+        run: |
+          set -eux
+          mkdir -p build/web
+          "$GODOT_BIN" --headless --export-release "Web" "$PWD/build/web/index.html" --verbose
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ steps.export.outputs.build_directory }}
+          path: build/web
 
   deploy:
     needs: export
