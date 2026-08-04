@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/board/tile.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/board/tiles.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/board/bonus_overlay.png" id="3"]
+
+[node name="Tile" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("2")
+hframes = 6
+
+[node name="BonusOverlay" type="Sprite2D" parent="."]
+texture = ExtResource("3")
+hframes = 2
+visible = false
