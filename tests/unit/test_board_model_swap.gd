@@ -26,8 +26,10 @@ func test_swap_that_creates_a_match_is_accepted_and_clears_cells():
 	var result := board.attempt_swap(Vector2i(2, 0), Vector2i(2, 1))
 	assert_true(result)
 	# Task 8 added gravity + refill to the cascade, so cleared cells no
-	# longer stay EMPTY_TYPE after the swap resolves; they get refilled.
-	assert_ne(board.get_tile_type(Vector2i(0, 0)), BoardModel.EMPTY_TYPE)
+	# longer stay EMPTY_TYPE after the swap resolves; they get refilled with
+	# a valid tile type instead.
+	var refilled_type: int = board.get_tile_type(Vector2i(0, 0))
+	assert_true(refilled_type >= 0 and refilled_type < board.tile_type_count, "cell should have been refilled with a valid tile type, got %d" % refilled_type)
 	assert_eq(board.moves_remaining, 19)
 
 func test_swap_that_creates_no_match_is_rejected_and_reverted():
