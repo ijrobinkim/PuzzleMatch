@@ -1,6 +1,8 @@
 class_name GameHUD
 extends CanvasLayer
 
+const KOREAN_FONT: Font = preload("res://assets/fonts/malgun.ttf")
+
 @onready var version_label: Label = $TopCenter/VersionPanel/VersionLabel
 @onready var scroll_container: ScrollContainer = $BottomLeft/LogPanel/MarginContainer/ScrollContainer
 @onready var log_vbox: VBoxContainer = $BottomLeft/LogPanel/MarginContainer/ScrollContainer/LogVBox
@@ -8,7 +10,9 @@ extends CanvasLayer
 const MAX_LOG_LINES := 50
 
 func _ready() -> void:
-	version_label.text = "v" + GameManager.GAME_VERSION
+	if version_label:
+		version_label.add_theme_font_override("font", KOREAN_FONT)
+		version_label.text = "v" + GameManager.GAME_VERSION
 	EventBus.log_emitted.connect(_on_log_emitted)
 	_add_log_line("🎮 게임 시작! (버전 v" + GameManager.GAME_VERSION + ")")
 
@@ -19,9 +23,10 @@ func _add_log_line(text: String) -> void:
 	if log_vbox == null:
 		return
 	var label := Label.new()
-	label.text = text
+	label.add_theme_font_override("font", KOREAN_FONT)
 	label.add_theme_font_size_override("font_size", 18)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.text = text
 	log_vbox.add_child(label)
 
 	while log_vbox.get_child_count() > MAX_LOG_LINES:

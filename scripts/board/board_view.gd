@@ -12,6 +12,10 @@ var _drag_start_cell := Vector2i(-1, -1)
 var _drag_start_pos := Vector2.ZERO
 const DRAG_THRESHOLD := 30.0
 
+var _pending_steps: Array = []
+var _is_animating: bool = false
+var _active_swap_tween: Tween
+
 func start_level(level_data: LevelData) -> void:
 	model = BoardModel.new(level_data)
 	model.cascade_step.connect(_on_cascade_step)
@@ -44,53 +48,116 @@ func _get_pooled_tile() -> Tile:
 	_tile_pool.append(tile)
 	return tile
 
-func _on_cascade_step(step: Dictionary) -> void:
-	for match_info in step["matches"]:
-		EventBus.tiles_matched.emit(match_info["type"], match_info["count"], match_info["position"])
-	for cell in step["cleared"]:
-		var tile: Tile = _cell_to_tile.get(cell)
-		if tile:
-			tile.animate_clear()
-			tile.reset()
-			tile.visible = false
-			_cell_to_tile.erase(cell)
-	for fall in step["falls"]:
-		var tile: Tile = _cell_to_tile.get(fall["from"])
-		if tile:
-			_cell_to_tile.erase(fall["from"])
-			_cell_to_tile[fall["to"]] = tile
-			tile.animate_move_to(fall["to"], CELL_SIZE)
-	for refill in step["refills"]:
-		var tile := _get_pooled_tile()
-		tile.setup(refill["pos"], refill["type"], model.get_bonus_kind(refill["pos"]), CELL_SIZE)
-		tile.animate_spawn()
-		_cell_to_tile[refill["pos"]] = tile
-	for spawn in step["bonuses"]:
-		var tile: Tile = _cell_to_tile.get(spawn["pos"])
-		if tile:
-			tile.setup(spawn["pos"], model.get_tile_type(spawn["pos"]), spawn["kind"], CELL_SIZE)
-
 func _on_swap_committed(a: Vector2i, b: Vector2i) -> void:
 	var tile_a: Tile = _cell_to_tile.get(a)
 	var tile_b: Tile = _cell_to_tile.get(b)
 	_cell_to_tile[a] = tile_b
 	_cell_to_tile[b] = tile_a
+
+	_active_swap_tween = create_tween().set_parallel(true)
 	if tile_a:
-		tile_a.animate_move_to(b, CELL_SIZE)
+		_active_swap_tween.tween_property(tile_a, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tile_a.cell = b
 	if tile_b:
-		tile_b.animate_move_to(a, CELL_SIZE)
+		_active_swap_tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tile_b.cell = a
 
 func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
-	for cell in [a, b]:
-		var tile: Tile = _cell_to_tile.get(cell)
-		if tile:
-			tile.animate_move_to(cell, CELL_SIZE)
+	var tile_a: Tile = _cell_to_tile.get(a)
+	var tile_b: Tile = _cell_to_tile.get(b)
+
+	var tween := create_tween().set_parallel(true)
+	if tile_a:
+		tween.tween_property(tile_a, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	if tile_b:
+		tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tween.finished
+
+	var return_tween := create_tween().set_parallel(true)
+	if tile_a:
+		return_tween.tween_property(tile_a, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	if tile_b:
+		return_tween.tween_property(tile_b, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await return_tween.finished
+
+func _on_cascade_step(step: Dictionary) -> void:
+	_pending_steps.append(step)
+	if not _is_animating:
+		_process_cascade_pipeline()
+
+func _process_cascade_pipeline() -> void:
+	_is_animating = true
+
+	# Wait for swap movement animation to finish completely
+	if _active_swap_tween and _active_swap_tween.is_running():
+		await _active_swap_tween.finished
+		_active_swap_tween = null
+
+	# Brief pause so user sees the swapped match aligned before clearing
+	await get_tree().create_timer(0.18).timeout
+
+	while not _pending_steps.is_empty():
+		var step: Dictionary = _pending_steps.pop_front()
+
+		# Emit match signals
+		for match_info in step["matches"]:
+			EventBus.tiles_matched.emit(match_info["type"], match_info["count"], match_info["position"])
+
+		# 1. Clear animation (Matched tiles shrink down and pop)
+		if not step["cleared"].is_empty():
+			var clear_tween := create_tween().set_parallel(true)
+			for cell in step["cleared"]:
+				var tile: Tile = _cell_to_tile.get(cell)
+				if tile:
+					clear_tween.tween_property(tile, "scale", Vector2.ZERO, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+			await clear_tween.finished
+
+			for cell in step["cleared"]:
+				var tile: Tile = _cell_to_tile.get(cell)
+				if tile:
+					tile.reset()
+					tile.visible = false
+					_cell_to_tile.erase(cell)
+
+		# Brief pause before falling
+		await get_tree().create_timer(0.08).timeout
+
+		# 2. Falling & Refill animation
+		var move_tween := create_tween().set_parallel(true)
+		for fall in step["falls"]:
+			var tile: Tile = _cell_to_tile.get(fall["from"])
+			if tile:
+				_cell_to_tile.erase(fall["from"])
+				_cell_to_tile[fall["to"]] = tile
+				tile.cell = fall["to"]
+				move_tween.tween_property(tile, "position", Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+		for refill in step["refills"]:
+			var tile := _get_pooled_tile()
+			tile.setup(refill["pos"], refill["type"], model.get_bonus_kind(refill["pos"]), CELL_SIZE)
+			tile.scale = Vector2.ZERO
+			move_tween.tween_property(tile, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			_cell_to_tile[refill["pos"]] = tile
+
+		for spawn in step["bonuses"]:
+			var tile: Tile = _cell_to_tile.get(spawn["pos"])
+			if tile:
+				tile.setup(spawn["pos"], model.get_tile_type(spawn["pos"]), spawn["kind"], CELL_SIZE)
+
+		if move_tween.get_total_child_count() > 0:
+			await move_tween.finished
+
+		# Pause between cascade steps if cascading continues
+		if not _pending_steps.is_empty():
+			await get_tree().create_timer(0.15).timeout
+
+	_is_animating = false
 
 func _cell_at_position(local_pos: Vector2) -> Vector2i:
 	return Vector2i(int(local_pos.x / CELL_SIZE), int(local_pos.y / CELL_SIZE))
 
 func _unhandled_input(event: InputEvent) -> void:
-	if model == null or model.is_busy:
+	if model == null or model.is_busy or _is_animating:
 		return
 	if event is InputEventScreenTouch or event is InputEventMouseButton:
 		var pressed: bool = event.is_pressed() if event is InputEventScreenTouch else (event as InputEventMouseButton).pressed

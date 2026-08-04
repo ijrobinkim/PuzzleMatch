@@ -49,16 +49,19 @@ func reset() -> void:
 	scale = Vector2.ONE
 	modulate = Color.WHITE
 
-func animate_move_to(target_cell: Vector2i, cell_size: float, duration: float = 0.2) -> void:
+func animate_move_to(target_cell: Vector2i, cell_size: float, duration: float = 0.22) -> Tween:
 	cell = target_cell
 	var tween := create_tween()
 	tween.tween_property(self, "position", Vector2(target_cell.x, target_cell.y) * cell_size, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	return tween
 
-func animate_clear(duration: float = 0.15) -> void:
+func animate_clear(duration: float = 0.2) -> Tween:
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	return tween
 
-func animate_spawn(duration: float = 0.15) -> void:
+func animate_spawn(duration: float = 0.2) -> Tween:
 	scale = Vector2.ZERO
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ONE, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	return tween
