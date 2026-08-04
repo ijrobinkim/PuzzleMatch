@@ -7,6 +7,15 @@ const BONUS_STRIPED_COL := "striped_col"
 const BONUS_BOMB := "bomb"
 const EMPTY_TYPE := -1
 
+signal swap_rejected(a: Vector2i, b: Vector2i)
+signal cascade_step(step: Dictionary)
+signal cascade_finished
+signal move_consumed(moves_remaining: int)
+signal score_changed(score: int)
+signal level_completed
+signal level_failed
+signal board_reshuffled
+
 var width: int
 var height: int
 var tile_type_count: int
@@ -61,7 +70,7 @@ func find_matches() -> Array:
 			var same: bool = x < width and types[x][y] == types[run_start][y]
 			if not same:
 				var length := x - run_start
-				if length >= 3:
+				if length >= 3 and types[run_start][y] != EMPTY_TYPE:
 					var cells: Array = []
 					for rx in range(run_start, x):
 						cells.append(Vector2i(rx, y))
@@ -73,7 +82,7 @@ func find_matches() -> Array:
 			var same: bool = y < height and types[x][y] == types[x][run_start]
 			if not same:
 				var length := y - run_start
-				if length >= 3:
+				if length >= 3 and types[x][run_start] != EMPTY_TYPE:
 					var cells: Array = []
 					for ry in range(run_start, y):
 						cells.append(Vector2i(x, ry))
@@ -154,3 +163,44 @@ func find_matches() -> Array:
 		matches.append({"cells": all_cells, "bonus_kind": bonus_kind, "bonus_pos": bonus_pos})
 
 	return matches
+
+func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
+	if is_busy:
+		return false
+	if not is_in_bounds(a) or not is_in_bounds(b):
+		return false
+	if absi(a.x - b.x) + absi(a.y - b.y) != 1:
+		return false
+	_swap_cells(a, b)
+	if find_matches().is_empty():
+		_swap_cells(a, b)
+		swap_rejected.emit(a, b)
+		return false
+	moves_remaining -= 1
+	move_consumed.emit(moves_remaining)
+	is_busy = true
+	_resolve_cascade()
+	is_busy = false
+	if score >= objective:
+		level_completed.emit()
+	elif moves_remaining <= 0:
+		level_failed.emit()
+	return true
+
+func _swap_cells(a: Vector2i, b: Vector2i) -> void:
+	var t: int = types[a.x][a.y]
+	types[a.x][a.y] = types[b.x][b.y]
+	types[b.x][b.y] = t
+	var bo: String = bonuses[a.x][a.y]
+	bonuses[a.x][a.y] = bonuses[b.x][b.y]
+	bonuses[b.x][b.y] = bo
+
+func _resolve_cascade() -> void:
+	var matches := find_matches()
+	while not matches.is_empty():
+		for m in matches:
+			for cell in m["cells"]:
+				types[cell.x][cell.y] = EMPTY_TYPE
+				bonuses[cell.x][cell.y] = BONUS_NONE
+		matches = find_matches()
+	cascade_finished.emit()
