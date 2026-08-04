@@ -8,6 +8,7 @@ const BONUS_BOMB := "bomb"
 const EMPTY_TYPE := -1
 
 signal swap_rejected(a: Vector2i, b: Vector2i)
+signal swap_committed(a: Vector2i, b: Vector2i)
 signal cascade_step(step: Dictionary)
 signal cascade_finished
 signal move_consumed(moves_remaining: int)
@@ -178,6 +179,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 		_swap_cells(a, b)
 		swap_rejected.emit(a, b)
 		return false
+	swap_committed.emit(a, b)
 	moves_remaining -= 1
 	move_consumed.emit(moves_remaining)
 	is_busy = true

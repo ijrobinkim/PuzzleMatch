@@ -17,6 +17,16 @@ func _flat_board(w: int, h: int, rows: Array, move_limit: int = 20, objective: i
 			board.bonuses[x][y] = BoardModel.BONUS_NONE
 	return board
 
+func test_accepted_swap_emits_swap_committed_with_the_swapped_cells():
+	# Swapping (2,0) and (2,1) makes row 0 read [0,0,0,1] -> a match.
+	var board := _flat_board(4, 2, [
+		[0, 0, 1, 1],
+		[2, 2, 0, 3],
+	])
+	var watcher = watch_signals(board)
+	board.attempt_swap(Vector2i(2, 0), Vector2i(2, 1))
+	assert_signal_emitted_with_parameters(board, "swap_committed", [Vector2i(2, 0), Vector2i(2, 1)])
+
 func test_swap_that_creates_a_match_is_accepted_and_clears_cells():
 	# Swapping (2,0) and (2,1) makes row 0 read [0,0,0,1] -> a match.
 	var board := _flat_board(4, 2, [

@@ -16,6 +16,7 @@ const DRAG_THRESHOLD := 30.0
 func start_level(level_data: LevelData) -> void:
 	model = BoardModel.new(level_data)
 	model.cascade_step.connect(_on_cascade_step)
+	model.swap_committed.connect(_on_swap_committed)
 	model.swap_rejected.connect(_on_swap_rejected)
 	model.move_consumed.connect(func(remaining: int): EventBus.move_used.emit(remaining))
 	model.level_completed.connect(func(): EventBus.level_completed.emit(level_data.level_id, 3))
@@ -68,6 +69,16 @@ func _on_cascade_step(step: Dictionary) -> void:
 		var tile: Tile = _cell_to_tile.get(spawn["pos"])
 		if tile:
 			tile.setup(spawn["pos"], model.get_tile_type(spawn["pos"]), spawn["kind"], CELL_SIZE)
+
+func _on_swap_committed(a: Vector2i, b: Vector2i) -> void:
+	var tile_a: Tile = _cell_to_tile.get(a)
+	var tile_b: Tile = _cell_to_tile.get(b)
+	_cell_to_tile[a] = tile_b
+	_cell_to_tile[b] = tile_a
+	if tile_a:
+		tile_a.animate_move_to(b, CELL_SIZE)
+	if tile_b:
+		tile_b.animate_move_to(a, CELL_SIZE)
 
 func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 	for cell in [a, b]:
