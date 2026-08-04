@@ -31,7 +31,8 @@ func test_grid_with_a_possible_match_has_a_valid_move():
 func test_reshuffle_produces_a_board_with_no_match_and_a_valid_move():
 	var board := BoardModel.new(_make_level(6, 6, 6), 1)
 	var watcher = watch_signals(board)
-	board.reshuffle()
+	var success := board.reshuffle()
+	assert_true(success, "reshuffle() should return true on success")
 	assert_eq(board.find_matches().size(), 0)
 	assert_true(board.has_any_valid_move())
 	assert_signal_emitted(board, "board_reshuffled")

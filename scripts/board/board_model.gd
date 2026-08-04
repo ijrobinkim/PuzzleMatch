@@ -325,7 +325,7 @@ func _would_swap_match(a: Vector2i, b: Vector2i) -> bool:
 	_swap_cells(a, b)
 	return has_match
 
-func reshuffle() -> void:
+func reshuffle() -> bool:
 	var flat_types: Array = []
 	for x in width:
 		for y in height:
@@ -340,13 +340,15 @@ func reshuffle() -> void:
 				i += 1
 		if find_matches().is_empty() and has_any_valid_move():
 			board_reshuffled.emit()
-			return
+			return true
 		attempts += 1
 	var fallback_attempts := 0
 	while fallback_attempts < 1000:
 		_fill_random_grid()
 		if find_matches().is_empty() and has_any_valid_move():
 			board_reshuffled.emit()
-			return
+			return true
 		fallback_attempts += 1
+	push_warning("reshuffle() exhausted all attempts without reaching a valid board state")
 	board_reshuffled.emit()
+	return false
