@@ -342,7 +342,11 @@ func reshuffle() -> void:
 			board_reshuffled.emit()
 			return
 		attempts += 1
-	_fill_random_grid()
-	while not find_matches().is_empty() or not has_any_valid_move():
+	var fallback_attempts := 0
+	while fallback_attempts < 1000:
 		_fill_random_grid()
+		if find_matches().is_empty() and has_any_valid_move():
+			board_reshuffled.emit()
+			return
+		fallback_attempts += 1
 	board_reshuffled.emit()
