@@ -40,6 +40,8 @@ func _init(level_data: LevelData, rng_seed: int = -1) -> void:
 	_fill_random_grid()
 	while not find_matches().is_empty():
 		_fill_random_grid()
+	if not has_any_valid_move():
+		reshuffle()
 
 func _fill_random_grid() -> void:
 	types.clear()
@@ -246,6 +248,8 @@ func _resolve_cascade() -> void:
 
 		matches = find_matches()
 
+	if not has_any_valid_move():
+		reshuffle()
 	cascade_finished.emit()
 
 func _expand_bonus_triggers(cleared: Dictionary) -> Dictionary:
@@ -305,3 +309,40 @@ func _refill_empty_cells() -> Array:
 				bonuses[x][y] = BONUS_NONE
 				refills.append({"pos": Vector2i(x, y), "type": new_type})
 	return refills
+
+func has_any_valid_move() -> bool:
+	for x in width:
+		for y in height:
+			if x + 1 < width and _would_swap_match(Vector2i(x, y), Vector2i(x + 1, y)):
+				return true
+			if y + 1 < height and _would_swap_match(Vector2i(x, y), Vector2i(x, y + 1)):
+				return true
+	return false
+
+func _would_swap_match(a: Vector2i, b: Vector2i) -> bool:
+	_swap_cells(a, b)
+	var has_match := not find_matches().is_empty()
+	_swap_cells(a, b)
+	return has_match
+
+func reshuffle() -> void:
+	var flat_types: Array = []
+	for x in width:
+		for y in height:
+			flat_types.append(types[x][y])
+	var attempts := 0
+	while attempts < 100:
+		flat_types.shuffle()
+		var i := 0
+		for x in width:
+			for y in height:
+				types[x][y] = flat_types[i]
+				i += 1
+		if find_matches().is_empty() and has_any_valid_move():
+			board_reshuffled.emit()
+			return
+		attempts += 1
+	_fill_random_grid()
+	while not find_matches().is_empty() or not has_any_valid_move():
+		_fill_random_grid()
+	board_reshuffled.emit()
