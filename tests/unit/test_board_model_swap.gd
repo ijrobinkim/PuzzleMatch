@@ -25,7 +25,9 @@ func test_swap_that_creates_a_match_is_accepted_and_clears_cells():
 	])
 	var result := board.attempt_swap(Vector2i(2, 0), Vector2i(2, 1))
 	assert_true(result)
-	assert_eq(board.get_tile_type(Vector2i(0, 0)), BoardModel.EMPTY_TYPE)
+	# Task 8 added gravity + refill to the cascade, so cleared cells no
+	# longer stay EMPTY_TYPE after the swap resolves; they get refilled.
+	assert_ne(board.get_tile_type(Vector2i(0, 0)), BoardModel.EMPTY_TYPE)
 	assert_eq(board.moves_remaining, 19)
 
 func test_swap_that_creates_no_match_is_rejected_and_reverted():

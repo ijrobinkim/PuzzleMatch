@@ -195,12 +195,113 @@ func _swap_cells(a: Vector2i, b: Vector2i) -> void:
 	bonuses[a.x][a.y] = bonuses[b.x][b.y]
 	bonuses[b.x][b.y] = bo
 
+const POINTS_PER_TILE := 10
+
 func _resolve_cascade() -> void:
 	var matches := find_matches()
 	while not matches.is_empty():
+		var match_infos: Array = []
+		var cleared: Dictionary = {}
+		var bonus_spawns: Array = []
 		for m in matches:
+			var anchor: Vector2i = m["cells"][0]
+			match_infos.append({
+				"type": types[anchor.x][anchor.y],
+				"count": m["cells"].size(),
+				"position": m["bonus_pos"] if m["bonus_kind"] != BONUS_NONE else anchor,
+			})
 			for cell in m["cells"]:
-				types[cell.x][cell.y] = EMPTY_TYPE
-				bonuses[cell.x][cell.y] = BONUS_NONE
+				cleared[cell] = true
+			if m["bonus_kind"] != BONUS_NONE:
+				bonus_spawns.append({"pos": m["bonus_pos"], "kind": m["bonus_kind"]})
+
+		cleared = _expand_bonus_triggers(cleared)
+
+		for spawn in bonus_spawns:
+			cleared.erase(spawn["pos"])
+
+		score += cleared.size() * POINTS_PER_TILE
+		score_changed.emit(score)
+
+		var cleared_cells: Array = cleared.keys()
+		var falls := _apply_gravity(cleared_cells)
+		var refills := _refill_empty_cells()
+
+		for spawn in bonus_spawns:
+			var final_pos: Vector2i = spawn["pos"]
+			for f in falls:
+				if f["from"] == spawn["pos"]:
+					final_pos = f["to"]
+					break
+			bonuses[final_pos.x][final_pos.y] = spawn["kind"]
+			spawn["pos"] = final_pos
+
+		cascade_step.emit({
+			"matches": match_infos,
+			"cleared": cleared_cells,
+			"bonuses": bonus_spawns,
+			"falls": falls,
+			"refills": refills,
+		})
+
 		matches = find_matches()
+
 	cascade_finished.emit()
+
+func _expand_bonus_triggers(cleared: Dictionary) -> Dictionary:
+	var changed := true
+	while changed:
+		changed = false
+		for cell in cleared.keys():
+			var kind: String = bonuses[cell.x][cell.y]
+			if kind == BONUS_NONE:
+				continue
+			var extra: Array = []
+			if kind == BONUS_STRIPED_ROW:
+				for x in width:
+					extra.append(Vector2i(x, cell.y))
+			elif kind == BONUS_STRIPED_COL:
+				for y in height:
+					extra.append(Vector2i(cell.x, y))
+			elif kind == BONUS_BOMB:
+				for dx in range(-1, 2):
+					for dy in range(-1, 2):
+						var c := Vector2i(cell.x + dx, cell.y + dy)
+						if is_in_bounds(c):
+							extra.append(c)
+			for c in extra:
+				if not cleared.has(c):
+					cleared[c] = true
+					changed = true
+	return cleared
+
+func _apply_gravity(cleared_cells: Array) -> Array:
+	var falls: Array = []
+	for cell in cleared_cells:
+		types[cell.x][cell.y] = EMPTY_TYPE
+		bonuses[cell.x][cell.y] = BONUS_NONE
+	for x in width:
+		var write_y := height - 1
+		for y in range(height - 1, -1, -1):
+			if types[x][y] == EMPTY_TYPE:
+				continue
+			if write_y != y:
+				types[x][write_y] = types[x][y]
+				bonuses[x][write_y] = bonuses[x][y]
+				falls.append({"from": Vector2i(x, y), "to": Vector2i(x, write_y)})
+			write_y -= 1
+		for empty_y in range(write_y, -1, -1):
+			types[x][empty_y] = EMPTY_TYPE
+			bonuses[x][empty_y] = BONUS_NONE
+	return falls
+
+func _refill_empty_cells() -> Array:
+	var refills: Array = []
+	for x in width:
+		for y in height:
+			if types[x][y] == EMPTY_TYPE:
+				var new_type := _rng.randi() % tile_type_count
+				types[x][y] = new_type
+				bonuses[x][y] = BONUS_NONE
+				refills.append({"pos": Vector2i(x, y), "type": new_type})
+	return refills
