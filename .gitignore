@@ -26,6 +26,7 @@ obj/
 
 # Subagent-driven-development scratch workspace (briefs, reports, ledger)
 .superpowers/
+.claude/
 
 # IDE and OS files
 .vs/

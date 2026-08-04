@@ -12,7 +12,6 @@ var _drag_start_cell := Vector2i(-1, -1)
 var _drag_start_pos := Vector2.ZERO
 const DRAG_THRESHOLD := 30.0
 
-
 func start_level(level_data: LevelData) -> void:
 	model = BoardModel.new(level_data)
 	model.cascade_step.connect(_on_cascade_step)
@@ -62,7 +61,7 @@ func _on_cascade_step(step: Dictionary) -> void:
 			tile.animate_move_to(fall["to"], CELL_SIZE)
 	for refill in step["refills"]:
 		var tile := _get_pooled_tile()
-		tile.setup(refill["pos"], refill["type"], "", CELL_SIZE)
+		tile.setup(refill["pos"], refill["type"], model.get_bonus_kind(refill["pos"]), CELL_SIZE)
 		tile.animate_spawn()
 		_cell_to_tile[refill["pos"]] = tile
 	for spawn in step["bonuses"]:
@@ -126,9 +125,14 @@ func _handle_release(cell: Vector2i) -> void:
 	if start != cell:
 		return
 	if _selected_cell == Vector2i(-1, -1):
-		_selected_cell = cell
+		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
+			model.activate_special_tile(cell)
+		else:
+			_selected_cell = cell
 		return
 	if _selected_cell == cell:
+		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
+			model.activate_special_tile(cell)
 		_selected_cell = Vector2i(-1, -1)
 		return
 	var dist := absi(_selected_cell.x - cell.x) + absi(_selected_cell.y - cell.y)
@@ -136,5 +140,8 @@ func _handle_release(cell: Vector2i) -> void:
 		model.attempt_swap(_selected_cell, cell)
 		_selected_cell = Vector2i(-1, -1)
 	else:
-		_selected_cell = cell
-
+		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
+			model.activate_special_tile(cell)
+			_selected_cell = Vector2i(-1, -1)
+		else:
+			_selected_cell = cell

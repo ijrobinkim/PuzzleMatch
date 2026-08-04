@@ -11,25 +11,41 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 	cell = p_cell
 	tile_type = p_type
 	position = Vector2(cell.x, cell.y) * cell_size
-	sprite.frame = p_type
+	sprite.frame = max(0, p_type)
 	bonus_overlay.rotation_degrees = 0.0
+	bonus_overlay.modulate = Color.WHITE
+	bonus_overlay.scale = Vector2.ONE
+
 	match bonus_kind:
 		BoardModel.BONUS_NONE:
 			bonus_overlay.visible = false
 		BoardModel.BONUS_BOMB:
 			bonus_overlay.visible = true
 			bonus_overlay.frame = 1
-		BoardModel.BONUS_STRIPED_ROW:
+		BoardModel.BONUS_ROCKET_H:
 			bonus_overlay.visible = true
 			bonus_overlay.frame = 0
-		BoardModel.BONUS_STRIPED_COL:
+			bonus_overlay.rotation_degrees = 0.0
+		BoardModel.BONUS_ROCKET_V:
 			bonus_overlay.visible = true
 			bonus_overlay.frame = 0
 			bonus_overlay.rotation_degrees = 90.0
+		BoardModel.BONUS_SPINNER:
+			bonus_overlay.visible = true
+			bonus_overlay.frame = 1
+			bonus_overlay.rotation_degrees = 45.0
+			bonus_overlay.scale = Vector2(0.85, 0.85)
+		BoardModel.BONUS_ELECTRO_BALL:
+			bonus_overlay.visible = true
+			bonus_overlay.frame = 1
+			bonus_overlay.modulate = Color(1.0, 0.85, 0.2)
 
 func reset() -> void:
 	tile_type = -1
 	bonus_overlay.visible = false
+	bonus_overlay.rotation_degrees = 0.0
+	bonus_overlay.modulate = Color.WHITE
+	bonus_overlay.scale = Vector2.ONE
 	scale = Vector2.ONE
 	modulate = Color.WHITE
 
