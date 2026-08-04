@@ -1,0 +1,43 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes to a separate config file: <config_name>.<extension>
+;
+; It's still a valid Godot config file, however
+; because it's stored in the same way as other config files.
+
+config_version=5
+
+[application]
+
+config/name="RoyalPuzzle"
+run/main_scene="res://scenes/screens/main_menu.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/bg_color=Color(0.117647, 0.0980392, 0.196078, 1)
+
+[autoload]
+
+GameManager="*res://scripts/autoloads/game_manager.gd"
+EventBus="*res://scripts/autoloads/event_bus.gd"
+AudioManager="*res://scripts/autoloads/audio_manager.gd"
+SaveManager="*res://scripts/autoloads/save_manager.gd"
+
+[display]
+
+window/size/viewport_width=1080
+window/size/viewport_height=1920
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/handheld/orientation="portrait"
+
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=1
