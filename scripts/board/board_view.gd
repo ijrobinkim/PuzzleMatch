@@ -99,18 +99,20 @@ func _process_cascade_pipeline() -> void:
 	while not _pending_steps.is_empty():
 		var step: Dictionary = _pending_steps.pop_front()
 
-		# Emit match signals
 		for match_info in step["matches"]:
 			EventBus.tiles_matched.emit(match_info["type"], match_info["count"], match_info["position"])
 
 		# 1. Clear animation (Matched tiles shrink down and pop)
 		if not step["cleared"].is_empty():
 			var clear_tween := create_tween().set_parallel(true)
+			var has_clear_tweens := false
 			for cell in step["cleared"]:
 				var tile: Tile = _cell_to_tile.get(cell)
 				if tile:
 					clear_tween.tween_property(tile, "scale", Vector2.ZERO, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-			await clear_tween.finished
+					has_clear_tweens = true
+			if has_clear_tweens:
+				await clear_tween.finished
 
 			for cell in step["cleared"]:
 				var tile: Tile = _cell_to_tile.get(cell)
@@ -124,6 +126,7 @@ func _process_cascade_pipeline() -> void:
 
 		# 2. Falling & Refill animation
 		var move_tween := create_tween().set_parallel(true)
+		var has_move_tweens := false
 		for fall in step["falls"]:
 			var tile: Tile = _cell_to_tile.get(fall["from"])
 			if tile:
@@ -131,6 +134,7 @@ func _process_cascade_pipeline() -> void:
 				_cell_to_tile[fall["to"]] = tile
 				tile.cell = fall["to"]
 				move_tween.tween_property(tile, "position", Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				has_move_tweens = true
 
 		for refill in step["refills"]:
 			var tile := _get_pooled_tile()
@@ -138,13 +142,14 @@ func _process_cascade_pipeline() -> void:
 			tile.scale = Vector2.ZERO
 			move_tween.tween_property(tile, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			_cell_to_tile[refill["pos"]] = tile
+			has_move_tweens = true
 
 		for spawn in step["bonuses"]:
 			var tile: Tile = _cell_to_tile.get(spawn["pos"])
 			if tile:
 				tile.setup(spawn["pos"], model.get_tile_type(spawn["pos"]), spawn["kind"], CELL_SIZE)
 
-		if move_tween.get_total_child_count() > 0:
+		if has_move_tweens:
 			await move_tween.finished
 
 		# Pause between cascade steps if cascading continues
