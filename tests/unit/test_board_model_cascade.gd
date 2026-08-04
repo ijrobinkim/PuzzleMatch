@@ -52,13 +52,15 @@ func test_four_match_spawns_striped_bonus_on_board():
 	# rng_seed=1 is fixed for determinism. If this ever fails because a
 	# refilled tile happens to chain-clear the new bonus tile in the same
 	# cascade, try rng_seed 2, 3, ... until the assertion is stable.
-	var board := _flat_board(5, 2, [
-		[0, 0, 0, 1, 2],
-		[3, 4, 5, 0, 4],
+	# Widened with safety columns to avoid incidental deadlock-reshuffle
+	# wiping the bonus tile (see Task 9 deadlock detection).
+	var board := _flat_board(7, 2, [
+		[0, 0, 0, 1, 2, 5, 5],
+		[3, 4, 5, 0, 4, 5, 5],
 	])
 	board.attempt_swap(Vector2i(3, 0), Vector2i(3, 1))
 	var found_bonus := false
-	for x in 5:
+	for x in 7:
 		for y in 2:
 			if board.get_bonus_kind(Vector2i(x, y)) == BoardModel.BONUS_STRIPED_ROW:
 				found_bonus = true
@@ -66,15 +68,18 @@ func test_four_match_spawns_striped_bonus_on_board():
 
 func test_triggering_a_striped_tile_clears_its_row():
 	# Manually place a striped_row bonus at (1,0), then match it into a new run.
-	var board := _flat_board(4, 2, [
-		[0, 0, 0, 1],
-		[5, 4, 3, 2],
+	# Widened with safety columns to avoid incidental deadlock-reshuffle
+	# wiping the bonus tile (see Task 9 deadlock detection).
+	var board := _flat_board(6, 2, [
+		[0, 0, 0, 1, 5, 5],
+		[5, 4, 3, 2, 5, 5],
 	])
 	board.bonuses[1][0] = BoardModel.BONUS_STRIPED_ROW
 	board.attempt_swap(Vector2i(3, 0), Vector2i(3, 1))
 	# Row 0 should be fully cleared and refilled (bonus flag reset on every
 	# cell); row 1 has nothing above it to fall into it, so it must be
-	# byte-for-byte unchanged. Both checks are independent of RNG output.
+	# byte-for-byte unchanged for the original columns. Both checks are
+	# independent of RNG output.
 	for x in 4:
 		assert_eq(board.get_bonus_kind(Vector2i(x, 0)), BoardModel.BONUS_NONE, "row 0 cell x=%d should have been cleared and refilled" % x)
 	assert_eq(board.get_tile_type(Vector2i(0, 1)), 5)
