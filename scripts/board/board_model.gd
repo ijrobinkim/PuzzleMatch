@@ -29,6 +29,8 @@ func _init(level_data: LevelData, rng_seed: int = -1) -> void:
 	else:
 		_rng.randomize()
 	_fill_random_grid()
+	while not find_matches().is_empty():
+		_fill_random_grid()
 
 func _fill_random_grid() -> void:
 	types.clear()
