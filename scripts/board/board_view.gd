@@ -35,7 +35,7 @@ func _render_initial_board() -> void:
 			var cell := Vector2i(x, y)
 			var tile := _get_pooled_tile()
 			tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
-			tile.animate_spawn()
+			tile.animate_spawn(0.3)
 			_cell_to_tile[cell] = tile
 
 func _get_pooled_tile() -> Tile:
@@ -56,10 +56,10 @@ func _on_swap_committed(a: Vector2i, b: Vector2i) -> void:
 
 	_active_swap_tween = create_tween().set_parallel(true)
 	if tile_a:
-		_active_swap_tween.tween_property(tile_a, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_active_swap_tween.tween_property(tile_a, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tile_a.cell = b
 	if tile_b:
-		_active_swap_tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_active_swap_tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tile_b.cell = a
 
 func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
@@ -68,16 +68,16 @@ func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 
 	var tween := create_tween().set_parallel(true)
 	if tile_a:
-		tween.tween_property(tile_a, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(tile_a, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if tile_b:
-		tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await tween.finished
 
 	var return_tween := create_tween().set_parallel(true)
 	if tile_a:
-		return_tween.tween_property(tile_a, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		return_tween.tween_property(tile_a, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if tile_b:
-		return_tween.tween_property(tile_b, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		return_tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await return_tween.finished
 
 func _on_cascade_step(step: Dictionary) -> void:
@@ -88,13 +88,13 @@ func _on_cascade_step(step: Dictionary) -> void:
 func _process_cascade_pipeline() -> void:
 	_is_animating = true
 
-	# Wait for swap movement animation to finish completely
+	# 1. Wait for swap animation to finish completely
 	if _active_swap_tween and _active_swap_tween.is_running():
 		await _active_swap_tween.finished
 		_active_swap_tween = null
 
-	# Brief pause so user sees the swapped match aligned before clearing
-	await get_tree().create_timer(0.18).timeout
+	# Brief pause so user sees the matched tiles aligned before breaking
+	await get_tree().create_timer(0.2).timeout
 
 	while not _pending_steps.is_empty():
 		var step: Dictionary = _pending_steps.pop_front()
@@ -102,17 +102,17 @@ func _process_cascade_pipeline() -> void:
 		for match_info in step["matches"]:
 			EventBus.tiles_matched.emit(match_info["type"], match_info["count"], match_info["position"])
 
-		# 1. Clear animation (Matched tiles shrink down and pop)
+		# 2. Tile breaking / pop particle animation
 		if not step["cleared"].is_empty():
 			var clear_tween := create_tween().set_parallel(true)
 			var has_clear_tweens := false
 			for cell in step["cleared"]:
 				var tile: Tile = _cell_to_tile.get(cell)
 				if tile:
-					clear_tween.tween_property(tile, "scale", Vector2.ZERO, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+					tile.animate_clear(0.35)
 					has_clear_tweens = true
 			if has_clear_tweens:
-				await clear_tween.finished
+				await get_tree().create_timer(0.35).timeout
 
 			for cell in step["cleared"]:
 				var tile: Tile = _cell_to_tile.get(cell)
@@ -121,10 +121,10 @@ func _process_cascade_pipeline() -> void:
 					tile.visible = false
 					_cell_to_tile.erase(cell)
 
-		# Brief pause before falling
-		await get_tree().create_timer(0.08).timeout
+		# Brief pause before gravity fall
+		await get_tree().create_timer(0.1).timeout
 
-		# 2. Falling & Refill animation
+		# 3. Slower Falling & Refill animation
 		var move_tween := create_tween().set_parallel(true)
 		var has_move_tweens := false
 		for fall in step["falls"]:
@@ -133,14 +133,14 @@ func _process_cascade_pipeline() -> void:
 				_cell_to_tile.erase(fall["from"])
 				_cell_to_tile[fall["to"]] = tile
 				tile.cell = fall["to"]
-				move_tween.tween_property(tile, "position", Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				move_tween.tween_property(tile, "position", Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE, 0.48).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 				has_move_tweens = true
 
 		for refill in step["refills"]:
 			var tile := _get_pooled_tile()
 			tile.setup(refill["pos"], refill["type"], model.get_bonus_kind(refill["pos"]), CELL_SIZE)
-			tile.scale = Vector2.ZERO
-			move_tween.tween_property(tile, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tile.position = Vector2(refill["pos"].x, -1) * CELL_SIZE
+			move_tween.tween_property(tile, "position", Vector2(refill["pos"].x, refill["pos"].y) * CELL_SIZE, 0.48).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 			_cell_to_tile[refill["pos"]] = tile
 			has_move_tweens = true
 
@@ -154,7 +154,7 @@ func _process_cascade_pipeline() -> void:
 
 		# Pause between cascade steps if cascading continues
 		if not _pending_steps.is_empty():
-			await get_tree().create_timer(0.15).timeout
+			await get_tree().create_timer(0.25).timeout
 
 	_is_animating = false
 

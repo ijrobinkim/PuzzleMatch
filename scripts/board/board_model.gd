@@ -248,7 +248,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 
 	# Case 1: Combo of 2 Special Tiles
 	if bonus_a != BONUS_NONE and bonus_b != BONUS_NONE:
-		log_event.emit("[아이템 조합] %s + %s 조합 발동! (%d,%d)↔(%d,%d)" % [get_bonus_name(bonus_a), get_bonus_name(bonus_b), a.x, a.y, b.x, b.y])
+		log_event.emit("[아이템 사용] %s + %s 콤보 발동! (%d,%d)↔(%d,%d)" % [get_bonus_name(bonus_a), get_bonus_name(bonus_b), a.x, a.y, b.x, b.y])
 		swap_committed.emit(a, b)
 		_consume_move()
 		is_busy = true
@@ -259,7 +259,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 
 	# Case 2: Electro Ball + Color Tile
 	if bonus_a == BONUS_ELECTRO_BALL and types[b.x][b.y] != EMPTY_TYPE:
-		log_event.emit("[아이템 조합] ⚡ 일렉트로 볼 + %s 조합 발동!" % get_color_name(types[b.x][b.y]))
+		log_event.emit("[아이템 사용] ⚡ 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[b.x][b.y]))
 		swap_committed.emit(a, b)
 		_consume_move()
 		is_busy = true
@@ -268,7 +268,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 		_check_game_over()
 		return true
 	elif bonus_b == BONUS_ELECTRO_BALL and types[a.x][a.y] != EMPTY_TYPE:
-		log_event.emit("[아이템 조합] ⚡ 일렉트로 볼 + %s 조합 발동!" % get_color_name(types[a.x][a.y]))
+		log_event.emit("[아이템 사용] ⚡ 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[a.x][a.y]))
 		swap_committed.emit(a, b)
 		_consume_move()
 		is_busy = true
@@ -293,7 +293,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 		else:
 			var active_cell: Vector2i = b if bonus_a != BONUS_NONE else a
 			var active_kind: String = bonus_a if bonus_a != BONUS_NONE else bonus_b
-			log_event.emit("[아이템 발동] %s (%d,%d) 이동 발동!" % [get_bonus_name(active_kind), active_cell.x, active_cell.y])
+			log_event.emit("[아이템 사용] %s (%d,%d) 이동 발동!" % [get_bonus_name(active_kind), active_cell.x, active_cell.y])
 			swap_committed.emit(a, b)
 			_consume_move()
 			is_busy = true
@@ -327,7 +327,7 @@ func activate_special_tile(cell: Vector2i) -> bool:
 	if kind == BONUS_NONE:
 		return false
 
-	log_event.emit("[아이템 터치] %s (%d,%d) 터치 발동!" % [get_bonus_name(kind), cell.x, cell.y])
+	log_event.emit("[아이템 사용] %s (%d,%d) 터치 발동!" % [get_bonus_name(kind), cell.x, cell.y])
 	_consume_move()
 	is_busy = true
 	_detonate_single_special(cell)
@@ -574,6 +574,8 @@ func _expand_bonus_triggers(cleared: Dictionary) -> Dictionary:
 						for y in height:
 							if types[x][y] == most_common:
 								extra.append(Vector2i(x, y))
+
+			log_event.emit("[아이템 연쇄] %s 연쇄 폭발! (%d,%d)" % [get_bonus_name(kind), cell.x, cell.y])
 
 			for c in extra:
 				if not cleared.has(c):
