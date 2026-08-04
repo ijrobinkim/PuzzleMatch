@@ -11,3 +11,5 @@ signal level_failed(level_id: String)
 
 signal currency_changed(currency_id: String, new_amount: int)
 signal renovation_task_completed(task_id: String)
+
+signal log_emitted(message: String, category: String)

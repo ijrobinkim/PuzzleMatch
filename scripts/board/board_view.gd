@@ -21,6 +21,7 @@ func start_level(level_data: LevelData) -> void:
 	model.level_completed.connect(func(): EventBus.level_completed.emit(level_data.level_id, 3))
 	model.level_failed.connect(func(): EventBus.level_failed.emit(level_data.level_id))
 	model.board_reshuffled.connect(func(): EventBus.board_shuffled.emit())
+	model.log_event.connect(func(msg: String): EventBus.log_emitted.emit(msg, "board"))
 	EventBus.level_started.emit(level_data.level_id)
 	_render_initial_board()
 
