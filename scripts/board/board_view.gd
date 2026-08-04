@@ -7,6 +7,11 @@ const TILE_SCENE: PackedScene = preload("res://scenes/board/tile.tscn")
 var model: BoardModel
 var _tile_pool: Array = []
 var _cell_to_tile: Dictionary = {}
+var _selected_cell := Vector2i(-1, -1)
+var _drag_start_cell := Vector2i(-1, -1)
+var _drag_start_pos := Vector2.ZERO
+const DRAG_THRESHOLD := 30.0
+
 
 func start_level(level_data: LevelData) -> void:
 	model = BoardModel.new(level_data)
@@ -69,3 +74,56 @@ func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 		var tile: Tile = _cell_to_tile.get(cell)
 		if tile:
 			tile.animate_move_to(cell, CELL_SIZE)
+
+func _cell_at_position(local_pos: Vector2) -> Vector2i:
+	return Vector2i(int(local_pos.x / CELL_SIZE), int(local_pos.y / CELL_SIZE))
+
+func _unhandled_input(event: InputEvent) -> void:
+	if model == null or model.is_busy:
+		return
+	if event is InputEventScreenTouch or event is InputEventMouseButton:
+		var pressed: bool = event.is_pressed() if event is InputEventScreenTouch else (event as InputEventMouseButton).pressed
+		var pos: Vector2 = event.position if event is InputEventScreenTouch else (event as InputEventMouseButton).position
+		var cell := _cell_at_position(to_local(pos))
+		if not model.is_in_bounds(cell):
+			return
+		if pressed:
+			_drag_start_cell = cell
+			_drag_start_pos = pos
+		else:
+			_handle_release(cell)
+	elif event is InputEventScreenDrag or event is InputEventMouseMotion:
+		if _drag_start_cell == Vector2i(-1, -1):
+			return
+		var pos: Vector2 = event.position if event is InputEventScreenDrag else (event as InputEventMouseMotion).position
+		var delta: Vector2 = pos - _drag_start_pos
+		if delta.length() >= DRAG_THRESHOLD:
+			var dir := Vector2i(0, 0)
+			if absf(delta.x) > absf(delta.y):
+				dir = Vector2i(1 if delta.x > 0 else -1, 0)
+			else:
+				dir = Vector2i(0, 1 if delta.y > 0 else -1)
+			var start := _drag_start_cell
+			var target := start + dir
+			_drag_start_cell = Vector2i(-1, -1)
+			_selected_cell = Vector2i(-1, -1)
+			model.attempt_swap(start, target)
+
+func _handle_release(cell: Vector2i) -> void:
+	var start := _drag_start_cell
+	_drag_start_cell = Vector2i(-1, -1)
+	if start != cell:
+		return
+	if _selected_cell == Vector2i(-1, -1):
+		_selected_cell = cell
+		return
+	if _selected_cell == cell:
+		_selected_cell = Vector2i(-1, -1)
+		return
+	var dist := absi(_selected_cell.x - cell.x) + absi(_selected_cell.y - cell.y)
+	if dist == 1:
+		model.attempt_swap(_selected_cell, cell)
+		_selected_cell = Vector2i(-1, -1)
+	else:
+		_selected_cell = cell
+
