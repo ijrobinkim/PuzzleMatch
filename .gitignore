@@ -24,6 +24,9 @@ obj/
 *.sln.user
 *.user
 
+# Subagent-driven-development scratch workspace (briefs, reports, ledger)
+.superpowers/
+
 # IDE and OS files
 .vs/
 .vscode/settings.json
