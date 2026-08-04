@@ -77,7 +77,7 @@ func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 	if tile_a:
 		return_tween.tween_property(tile_a, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if tile_b:
-		return_tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		return_tween.tween_property(tile_b, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await return_tween.finished
 
 func _on_cascade_step(step: Dictionary) -> void:
