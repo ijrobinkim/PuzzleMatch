@@ -39,25 +39,13 @@ func start_level(level_data: LevelData) -> void:
 	_render_initial_board()
 
 func _render_initial_board() -> void:
-	var move_tween := create_tween().set_parallel(true)
-	var landing_tiles: Array = []
 	for x in model.width:
 		for y in model.height:
 			var cell := Vector2i(x, y)
 			var tile := _get_pooled_tile()
 			tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
-			var start_y := -(model.height - y)
-			tile.position = Vector2(x, start_y) * CELL_SIZE
-			var dist := y - start_y
-			var duration := 0.2 + dist * 0.05
-			move_tween.tween_property(tile, "position", Vector2(x, y) * CELL_SIZE, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tile.animate_spawn(0.3)
 			_cell_to_tile[cell] = tile
-			landing_tiles.append(tile)
-
-	await move_tween.finished
-	for tile in landing_tiles:
-		if is_instance_valid(tile) and tile.visible:
-			tile.animate_land_bounce(0.12)
 	_schedule_hint_timer()
 
 func _get_pooled_tile() -> Tile:
