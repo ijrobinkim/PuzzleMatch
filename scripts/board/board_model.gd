@@ -272,19 +272,13 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 		log_event.emit("[아이템 사용] ⚡ 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[b.x][b.y]))
 		swap_committed.emit(a, b)
 		_consume_move()
-		is_busy = true
-		_execute_electro_ball_color_swap(a, b)
-		is_busy = false
-		_check_game_over()
+		_do_electro_ball(a, b)
 		return true
 	elif bonus_b == BONUS_ELECTRO_BALL and types[a.x][a.y] != EMPTY_TYPE:
 		log_event.emit("[아이템 사용] ⚡ 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[a.x][a.y]))
 		swap_committed.emit(a, b)
 		_consume_move()
-		is_busy = true
-		_execute_electro_ball_color_swap(b, a)
-		is_busy = false
-		_check_game_over()
+		_do_electro_ball(b, a)
 		return true
 
 	# Case 3: Swap Special Tile with Normal Color Tile
@@ -296,9 +290,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 			log_event.emit("[스왑 & 아이템 발동] (%d,%d) ↔ (%d,%d)" % [a.x, a.y, b.x, b.y])
 			swap_committed.emit(a, b)
 			_consume_move()
-			is_busy = true
-			_resolve_cascade(b, special_cell)
-			is_busy = false
+			_do_attempt_swap_cascade(b, special_cell)
 			_check_game_over()
 			return true
 		else:
@@ -307,9 +299,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 			log_event.emit("[아이템 사용] %s (%d,%d) 이동 발동!" % [get_bonus_name(active_kind), active_cell.x, active_cell.y])
 			swap_committed.emit(a, b)
 			_consume_move()
-			is_busy = true
-			_detonate_single_special(active_cell)
-			is_busy = false
+			_do_attempt_swap_cascade(Vector2i(-1,-1), active_cell)
 			_check_game_over()
 			return true
 
@@ -325,11 +315,16 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 	log_event.emit("[스왑 성공] (%d,%d) ↔ (%d,%d)" % [a.x, a.y, b.x, b.y])
 	swap_committed.emit(a, b)
 	_consume_move()
+	_do_attempt_swap_cascade(b, Vector2i(-1,-1))
+	return true
+
+func _do_activate_special_tile(cell: Vector2i) -> void:
 	is_busy = true
-	_resolve_cascade(b)
+	var cleared: Dictionary = {}
+	cleared[cell] = true
+	await _run_cascade_async(Vector2i(-1,-1), Vector2i(-1,-1), cleared)
 	is_busy = false
 	_check_game_over()
-	return true
 
 func activate_special_tile(cell: Vector2i) -> bool:
 	if is_busy or not is_in_bounds(cell):
@@ -340,10 +335,7 @@ func activate_special_tile(cell: Vector2i) -> bool:
 
 	log_event.emit("[아이템 사용] %s (%d,%d) 터치 발동!" % [get_bonus_name(kind), cell.x, cell.y])
 	_consume_move()
-	is_busy = true
-	_detonate_single_special(cell)
-	is_busy = false
-	_check_game_over()
+	_do_activate_special_tile(cell)
 	return true
 
 func _consume_move() -> void:
@@ -502,28 +494,19 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 		for c in cleared.keys():
 			bonuses[c.x][c.y] = BONUS_NONE
 
-	_process_cleared_dict(cleared, custom_spinners, custom_rockets)
+	await _run_cascade_async(Vector2i(-1,-1), Vector2i(-1,-1), cleared, custom_spinners, custom_rockets)
 
-	# Handle delayed impacts from flying spinners
-	var has_delayed_impact := false
-	for sp in custom_spinners:
-		if sp.has("impact_area"):
-			has_delayed_impact = true
-			break
-	
-	if has_delayed_impact:
-		await Engine.get_main_loop().create_timer(0.48).timeout
-		var impact_cleared: Dictionary = {}
-		for sp in custom_spinners:
-			if sp.has("impact_area"):
-				for c in sp["impact_area"]:
-					impact_cleared[c] = true
-		
-		for c in impact_cleared.keys():
-			if is_in_bounds(c):
-				bonuses[c.x][c.y] = BONUS_NONE
-		
-		_process_cleared_dict(impact_cleared)
+func _do_attempt_swap_cascade(swap_target: Vector2i, extra_trigger: Vector2i) -> void:
+	is_busy = true
+	await _run_cascade_async(swap_target, extra_trigger)
+	is_busy = false
+	_check_game_over()
+
+func _do_electro_ball(ball: Vector2i, color_cell: Vector2i) -> void:
+	is_busy = true
+	await _execute_electro_ball_color_swap(ball, color_cell)
+	is_busy = false
+	_check_game_over()
 
 func _execute_electro_ball_color_swap(ball_cell: Vector2i, color_cell: Vector2i) -> void:
 	var target_color: int = types[color_cell.x][color_cell.y]
@@ -536,117 +519,9 @@ func _execute_electro_ball_color_swap(ball_cell: Vector2i, color_cell: Vector2i)
 			if types[x][y] == target_color:
 				cleared[Vector2i(x, y)] = true
 
-	_process_cleared_dict(cleared)
+	await _run_cascade_async(Vector2i(-1,-1), Vector2i(-1,-1), cleared)
 
-func _detonate_single_special(cell: Vector2i) -> void:
-	var cleared: Dictionary = {}
-	cleared[cell] = true
-	_process_cleared_dict(cleared)
 
-func _process_cleared_dict(cleared: Dictionary, extra_spinners: Array = [], extra_rockets: Array = []) -> void:
-	var expand_res := _expand_bonus_triggers(cleared)
-	cleared = expand_res[0]
-	var spinners: Array = expand_res[1]
-	var rockets: Array = expand_res[2]
-
-	spinners.append_array(extra_spinners)
-	rockets.append_array(extra_rockets)
-
-	var gained := cleared.size() * POINTS_PER_TILE
-	score += gained
-	score_changed.emit(score)
-	log_event.emit("[점수] +%d점 (총 %d점)" % [gained, score])
-
-	var cleared_cells: Array = cleared.keys()
-	var falls := _apply_gravity(cleared_cells)
-	var refills := _refill_empty_cells()
-
-	cascade_step.emit({
-		"matches": [],
-		"cleared": cleared_cells,
-		"bonuses": [],
-		"falls": falls,
-		"refills": refills,
-		"spinners": spinners,
-		"rockets": rockets,
-	})
-
-	_resolve_cascade()
-
-func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_cell: Vector2i = Vector2i(-1, -1)) -> void:
-	var matches := find_matches(swap_target)
-	var current_extra_trigger := extra_trigger_cell
-	while not matches.is_empty():
-		var match_infos: Array = []
-		var cleared: Dictionary = {}
-		var bonus_spawns: Array = []
-
-		for m in matches:
-			var anchor: Vector2i = m["cells"][0]
-			match_infos.append({
-				"type": m["color"],
-				"count": m["cells"].size(),
-				"position": m["bonus_pos"] if m["bonus_kind"] != BONUS_NONE else anchor,
-			})
-			for cell in m["cells"]:
-				cleared[cell] = true
-			if m["bonus_kind"] != BONUS_NONE:
-				bonus_spawns.append({
-					"pos": m["bonus_pos"],
-					"spawn_pos": m["bonus_pos"],
-					"kind": m["bonus_kind"],
-					"match_cells": m["cells"].duplicate(),
-				})
-				log_event.emit("[아이템 생성] %s 생성! (%d,%d)" % [get_bonus_name(m["bonus_kind"]), m["bonus_pos"].x, m["bonus_pos"].y])
-			else:
-				log_event.emit("[매치] %s %d개 제거!" % [get_color_name(m["color"]), m["cells"].size()])
-
-		if current_extra_trigger != Vector2i(-1, -1):
-			cleared[current_extra_trigger] = true
-			current_extra_trigger = Vector2i(-1, -1)
-
-		var expand_res := _expand_bonus_triggers(cleared)
-		cleared = expand_res[0]
-		var spinners: Array = expand_res[1]
-		var rockets: Array = expand_res[2]
-
-		for spawn in bonus_spawns:
-			cleared.erase(spawn["spawn_pos"])
-
-		var gained := cleared.size() * POINTS_PER_TILE
-		score += gained
-		score_changed.emit(score)
-		log_event.emit("[점수] +%d점 (총 %d점)" % [gained, score])
-
-		var cleared_cells: Array = cleared.keys()
-		var falls := _apply_gravity(cleared_cells)
-		var refills := _refill_empty_cells()
-
-		for spawn in bonus_spawns:
-			var final_pos: Vector2i = spawn["spawn_pos"]
-			for f in falls:
-				if f["from"] == spawn["spawn_pos"]:
-					final_pos = f["to"]
-					break
-			bonuses[final_pos.x][final_pos.y] = spawn["kind"]
-			spawn["pos"] = final_pos
-
-		cascade_step.emit({
-			"matches": match_infos,
-			"cleared": cleared_cells,
-			"bonuses": bonus_spawns,
-			"falls": falls,
-			"refills": refills,
-			"spinners": spinners,
-			"rockets": rockets,
-		})
-
-		swap_target = Vector2i(-1, -1)
-		matches = find_matches()
-
-	if not has_any_valid_move():
-		reshuffle()
-	cascade_finished.emit()
 
 func _expand_bonus_triggers(cleared: Dictionary) -> Array:
 	var changed := true
@@ -693,11 +568,12 @@ func _expand_bonus_triggers(cleared: Dictionary) -> Array:
 				var target_cell: Vector2i = cell
 				if not targets.is_empty():
 					target_cell = targets[0]
-					extra.append(target_cell)
 				spinner_events.append({
 					"from": cell,
 					"cross": cross_cells,
-					"target": target_cell
+					"target": target_cell,
+					"item_kind": BONUS_NONE,
+					"impact_area": [target_cell]
 				})
 			elif kind == BONUS_ELECTRO_BALL:
 				var most_common := _find_most_common_color()
@@ -1041,3 +917,111 @@ func spawn_random_special_items() -> void:
 
 	log_event.emit("[디버그] 🎲 (%d,%d) 위치에 %s 1개 생성!" % [cell.x, cell.y, get_bonus_name(bonus)])
 	special_items_spawned.emit()
+
+func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_cell: Vector2i = Vector2i(-1, -1), initial_cleared: Dictionary = {}, extra_spinners: Array = [], extra_rockets: Array = []) -> void:
+	var current_cleared := initial_cleared.duplicate()
+	var pending_spinners := extra_spinners.duplicate()
+	var pending_rockets := extra_rockets.duplicate()
+	var current_extra_trigger := extra_trigger_cell
+	var current_swap_target := swap_target
+
+	var has_more_work := true
+
+	while has_more_work:
+		has_more_work = false
+		
+		var matches := find_matches(current_swap_target)
+		var match_infos: Array = []
+		var bonus_spawns: Array = []
+
+		for m in matches:
+			var anchor: Vector2i = m["cells"][0]
+			match_infos.append({
+				"type": m["color"],
+				"count": m["cells"].size(),
+				"position": m["bonus_pos"] if m["bonus_kind"] != BONUS_NONE else anchor,
+			})
+			for cell in m["cells"]:
+				current_cleared[cell] = true
+			if m["bonus_kind"] != BONUS_NONE:
+				bonus_spawns.append({
+					"pos": m["bonus_pos"],
+					"spawn_pos": m["bonus_pos"],
+					"kind": m["bonus_kind"],
+					"match_cells": m["cells"].duplicate(),
+				})
+				log_event.emit("[아이템 생성] %s 생성! (%d,%d)" % [get_bonus_name(m["bonus_kind"]), m["bonus_pos"].x, m["bonus_pos"].y])
+			else:
+				log_event.emit("[매치] %s %d개 제거!" % [get_color_name(m["color"]), m["cells"].size()])
+		
+		if current_extra_trigger != Vector2i(-1, -1):
+			current_cleared[current_extra_trigger] = true
+			current_extra_trigger = Vector2i(-1, -1)
+
+		if not current_cleared.is_empty():
+			var expand_res := _expand_bonus_triggers(current_cleared)
+			current_cleared = expand_res[0]
+			pending_spinners.append_array(expand_res[1])
+			pending_rockets.append_array(expand_res[2])
+
+			for spawn in bonus_spawns:
+				current_cleared.erase(spawn["spawn_pos"])
+
+			var gained := current_cleared.size() * POINTS_PER_TILE
+			score += gained
+			score_changed.emit(score)
+			log_event.emit("[점수] +%d점 (총 %d점)" % [gained, score])
+
+			var cleared_cells: Array = current_cleared.keys()
+			var falls := _apply_gravity(cleared_cells)
+			var refills := _refill_empty_cells()
+
+			for spawn in bonus_spawns:
+				var final_pos: Vector2i = spawn["spawn_pos"]
+				for f in falls:
+					if f["from"] == spawn["spawn_pos"]:
+						final_pos = f["to"]
+						break
+				bonuses[final_pos.x][final_pos.y] = spawn["kind"]
+				spawn["pos"] = final_pos
+
+			cascade_step.emit({
+				"matches": match_infos,
+				"cleared": cleared_cells,
+				"bonuses": bonus_spawns,
+				"falls": falls,
+				"refills": refills,
+				"spinners": pending_spinners.duplicate(),
+				"rockets": pending_rockets.duplicate(),
+			})
+
+			has_more_work = true
+
+		current_swap_target = Vector2i(-1, -1)
+		current_cleared.clear()
+
+		var delayed_impacts: Array = []
+		for sp in pending_spinners:
+			if sp.has("impact_area") or sp.has("target"):
+				delayed_impacts.append(sp)
+		
+		pending_spinners.clear()
+		pending_rockets.clear()
+
+		if not delayed_impacts.is_empty():
+			await Engine.get_main_loop().create_timer(0.48).timeout
+			for sp in delayed_impacts:
+				var area: Array = sp.get("impact_area", [sp.get("target", Vector2i(-1, -1))])
+				for c in area:
+					if c != Vector2i(-1, -1):
+						current_cleared[c] = true
+			
+			for c in current_cleared.keys():
+				if is_in_bounds(c):
+					bonuses[c.x][c.y] = BONUS_NONE
+			
+			has_more_work = true
+	
+	if not has_any_valid_move():
+		reshuffle()
+	cascade_finished.emit()

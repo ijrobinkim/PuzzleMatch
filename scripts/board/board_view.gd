@@ -441,7 +441,6 @@ func _process_cascade_pipeline() -> void:
 				_cell_to_tile.erase(fall["from"])
 				_cell_to_tile[fall["to"]] = tile
 				tile.cell = fall["to"]
-				tile.setup(fall["to"], model.get_tile_type(fall["to"]), model.get_bonus_kind(fall["to"]), CELL_SIZE)
 				var target_pos := Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE
 				move_tween.tween_property(tile, "position", target_pos, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 				has_move_tweens = true
@@ -463,7 +462,7 @@ func _process_cascade_pipeline() -> void:
 				var refill: Dictionary = col_refills[idx]
 				var dest_pos: Vector2i = refill["pos"]
 				var tile := _get_pooled_tile()
-				tile.setup(dest_pos, refill["type"], model.get_bonus_kind(dest_pos), CELL_SIZE)
+				tile.setup(dest_pos, refill["type"], "", CELL_SIZE)
 
 				var start_y: float = -1.0 - float(total_in_col - 1 - idx)
 				tile.position = Vector2(dest_pos.x, start_y) * CELL_SIZE
@@ -476,24 +475,27 @@ func _process_cascade_pipeline() -> void:
 		for spawn in step["bonuses"]:
 			var tile: Tile = _cell_to_tile.get(spawn["pos"])
 			if tile:
-				tile.setup(spawn["pos"], model.get_tile_type(spawn["pos"]), spawn["kind"], CELL_SIZE)
+				tile.setup(spawn["pos"], tile.tile_type, spawn["kind"], CELL_SIZE)
 
 		if has_move_tweens:
 			await move_tween.finished
 
-		# Full Board State Sync to guarantee 100% tile consistency with model after every cascade step
-		for x in model.width:
-			for y in model.height:
-				var cell := Vector2i(x, y)
-				var tile := _ensure_tile_at(cell)
-				tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
-				tile.position = Vector2(x, y) * CELL_SIZE
+		# We DO NOT sync here anymore because the model might have advanced multiple steps.
 
 		# Pause between cascade steps if cascading continues
 		if not _pending_steps.is_empty():
 			await get_tree().create_timer(0.25).timeout
 
 	_is_animating = false
+
+	# Full Board State Sync at the very end of all animations, if model is fully done
+	if not model.is_busy:
+		for x in model.width:
+			for y in model.height:
+				var cell := Vector2i(x, y)
+				var tile := _ensure_tile_at(cell)
+				tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
+				tile.position = Vector2(x, y) * CELL_SIZE
 
 	if not _current_hint_target.is_empty() and not model.is_hint_target_valid(_current_hint_target):
 		_current_hint_target = {}
