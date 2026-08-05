@@ -140,12 +140,6 @@ func stop_hint() -> void:
 	rotation_degrees = 0.0
 	modulate = Color.WHITE
 
-func animate_land_bounce(duration: float = 0.12) -> Tween:
-	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2(1.06, 0.94), duration * 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "scale", Vector2.ONE, duration * 0.6).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	return tween
-
 func _spawn_break_particles() -> void:
 	var particles := CPUParticles2D.new()
 	particles.emitting = false

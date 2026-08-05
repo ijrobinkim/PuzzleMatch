@@ -181,46 +181,25 @@ func _process_cascade_pipeline() -> void:
 		# Brief pause before gravity fall
 		await get_tree().create_timer(0.1).timeout
 
-		# 3. Stacked Column Falling & Refill animation
+		# 3. Smooth Falling & Refill animation
 		var move_tween := create_tween().set_parallel(true)
 		var has_move_tweens := false
-		var landing_tiles: Array = []
-
 		for fall in step["falls"]:
 			var tile: Tile = _cell_to_tile.get(fall["from"])
 			if tile:
 				_cell_to_tile.erase(fall["from"])
 				_cell_to_tile[fall["to"]] = tile
 				tile.cell = fall["to"]
-				var dist := fall["to"].y - fall["from"].y
-				var duration := 0.22 + dist * 0.07
-				move_tween.tween_property(tile, "position", Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-				landing_tiles.append(tile)
+				move_tween.tween_property(tile, "position", Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 				has_move_tweens = true
 
-		var refills_by_col: Dictionary = {}
 		for refill in step["refills"]:
-			var col: int = refill["pos"].x
-			if not refills_by_col.has(col):
-				refills_by_col[col] = []
-			refills_by_col[col].append(refill)
-
-		for col in refills_by_col.keys():
-			var col_refills: Array = refills_by_col[col]
-			var n_refills := col_refills.size()
-			for i in range(n_refills):
-				var refill: Dictionary = col_refills[i]
-				var pos: Vector2i = refill["pos"]
-				var start_y := -(n_refills - i)
-				var tile := _get_pooled_tile()
-				tile.setup(pos, refill["type"], model.get_bonus_kind(pos), CELL_SIZE)
-				tile.position = Vector2(pos.x, start_y) * CELL_SIZE
-				var dist := pos.y - start_y
-				var duration := 0.22 + dist * 0.07
-				move_tween.tween_property(tile, "position", Vector2(pos.x, pos.y) * CELL_SIZE, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-				_cell_to_tile[pos] = tile
-				landing_tiles.append(tile)
-				has_move_tweens = true
+			var tile := _get_pooled_tile()
+			tile.setup(refill["pos"], refill["type"], model.get_bonus_kind(refill["pos"]), CELL_SIZE)
+			tile.position = Vector2(refill["pos"].x, -1.0 - refill["pos"].y * 0.5) * CELL_SIZE
+			move_tween.tween_property(tile, "position", Vector2(refill["pos"].x, refill["pos"].y) * CELL_SIZE, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			_cell_to_tile[refill["pos"]] = tile
+			has_move_tweens = true
 
 		for spawn in step["bonuses"]:
 			var tile: Tile = _cell_to_tile.get(spawn["pos"])
@@ -229,9 +208,6 @@ func _process_cascade_pipeline() -> void:
 
 		if has_move_tweens:
 			await move_tween.finished
-			for tile in landing_tiles:
-				if is_instance_valid(tile) and tile.visible:
-					tile.animate_land_bounce(0.12)
 
 		# Pause between cascade steps if cascading continues
 		if not _pending_steps.is_empty():
