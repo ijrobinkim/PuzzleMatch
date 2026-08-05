@@ -390,11 +390,129 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 		if target_color == EMPTY_TYPE:
 			target_color = _find_most_common_color()
 		if target_color != EMPTY_TYPE:
+			var target_cells: Array[Vector2i] = []
 			for x in width:
 				for y in height:
 					if types[x][y] == target_color:
-						bonuses[x][y] = other_bonus
-						cleared[Vector2i(x, y)] = true
+						target_cells.append(Vector2i(x, y))
+			
+			target_cells.shuffle()
+
+			# 1. Conversion step (staggered visually in the view)
+			var conversion_bonuses: Array = []
+			for cell in target_cells:
+				bonuses[cell.x][cell.y] = other_bonus
+				conversion_bonuses.append({
+					"pos": cell,
+					"spawn_pos": cell,
+					"kind": other_bonus,
+					"match_cells": [],
+				})
+			
+			cascade_step.emit({
+				"matches": [],
+				"cleared": [],
+				"bonuses": conversion_bonuses,
+				"falls": [],
+				"refills": [],
+				"spinners": [],
+				"rockets": [],
+				"is_electro_stagger": true,
+			})
+
+			# Wait for staggered conversion animation to finish in the view
+			var conversion_delay := 0.35 + float(target_cells.size()) * 0.08
+			await Engine.get_main_loop().create_timer(conversion_delay).timeout
+
+			# 2. Sequential explosions in the model (packed into a single staggered step)
+			var cumulative_cleared: Dictionary = {}
+			var staggered_clears: Array = []
+			
+			for cell in target_cells:
+				var step_cleared: Dictionary = {}
+				var step_rockets: Array = []
+				var step_spinners: Array = []
+
+				step_cleared[cell] = true
+				bonuses[cell.x][cell.y] = BONUS_NONE
+
+				if other_bonus == BONUS_BOMB:
+					for dx in range(-2, 3):
+						for dy in range(-2, 3):
+							var c: Vector2i = Vector2i(cell.x + dx, cell.y + dy)
+							if is_in_bounds(c):
+								step_cleared[c] = true
+								bonuses[c.x][c.y] = BONUS_NONE
+				elif other_bonus == BONUS_ROCKET_H or other_bonus == BONUS_ROCKET_V:
+					var r_kind := other_bonus
+					if r_kind == BONUS_ROCKET_H:
+						for x in width:
+							step_cleared[Vector2i(x, cell.y)] = true
+							bonuses[x][cell.y] = BONUS_NONE
+					else:
+						for y in height:
+							step_cleared[Vector2i(cell.x, y)] = true
+							bonuses[cell.x][y] = BONUS_NONE
+					step_rockets.append({"from": cell, "kind": r_kind})
+				elif other_bonus == BONUS_SPINNER:
+					var cross_cells: Array[Vector2i] = []
+					for dir in dirs:
+						var c := cell + dir
+						if is_in_bounds(c):
+							cross_cells.append(c)
+							step_cleared[c] = true
+							bonuses[c.x][c.y] = BONUS_NONE
+					
+					var targets := _pick_random_targets(1, [cell])
+					var target_cell := cell
+					if not targets.is_empty():
+						target_cell = targets[0]
+					
+					var spinner_event = {
+						"from": cell,
+						"cross": cross_cells,
+						"target": target_cell,
+						"item_kind": BONUS_SPINNER,
+						"impact_area": [target_cell],
+					}
+					step_spinners.append(spinner_event)
+					custom_spinners.append(spinner_event)
+
+				var new_cleared_cells: Array = []
+				for c in step_cleared.keys():
+					if not cumulative_cleared.has(c):
+						new_cleared_cells.append(c)
+						cumulative_cleared[c] = true
+
+				staggered_clears.append({
+					"center": cell,
+					"cleared": new_cleared_cells,
+					"rockets": step_rockets,
+					"spinners": step_spinners,
+					"kind": other_bonus,
+				})
+
+				var gained := new_cleared_cells.size() * POINTS_PER_TILE
+				score += gained
+				score_changed.emit(score)
+
+			# Emit the single step containing all staggered clear events
+			cascade_step.emit({
+				"matches": [],
+				"cleared": cumulative_cleared.keys(),
+				"bonuses": [],
+				"falls": [],
+				"refills": [],
+				"spinners": [],
+				"rockets": [],
+				"staggered_clears": staggered_clears,
+			})
+
+			# Wait for staggered explosion animation to finish in the view (max delay 0.4s + 0.35s)
+			await Engine.get_main_loop().create_timer(0.75).timeout
+
+			await _run_cascade_async(Vector2i(-1,-1), Vector2i(-1,-1), cumulative_cleared, custom_spinners, custom_rockets, true)
+			return
 	elif is_rocket_a and is_rocket_b:
 		for x in width:
 			cleared[Vector2i(x, b.y)] = true
@@ -918,7 +1036,7 @@ func spawn_random_special_items() -> void:
 	log_event.emit("[디버그] 🎲 (%d,%d) 위치에 %s 1개 생성!" % [cell.x, cell.y, get_bonus_name(bonus)])
 	special_items_spawned.emit()
 
-func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_cell: Vector2i = Vector2i(-1, -1), initial_cleared: Dictionary = {}, extra_spinners: Array = [], extra_rockets: Array = []) -> void:
+func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_cell: Vector2i = Vector2i(-1, -1), initial_cleared: Dictionary = {}, extra_spinners: Array = [], extra_rockets: Array = [], skip_scoring: bool = false) -> void:
 	var current_cleared := initial_cleared.duplicate()
 	var pending_spinners := extra_spinners.duplicate()
 	var pending_rockets := extra_rockets.duplicate()
@@ -967,10 +1085,13 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 			for spawn in bonus_spawns:
 				current_cleared.erase(spawn["spawn_pos"])
 
-			var gained := current_cleared.size() * POINTS_PER_TILE
-			score += gained
-			score_changed.emit(score)
-			log_event.emit("[점수] +%d점 (총 %d점)" % [gained, score])
+			if not skip_scoring:
+				var gained := current_cleared.size() * POINTS_PER_TILE
+				score += gained
+				score_changed.emit(score)
+				log_event.emit("[점수] +%d점 (총 %d점)" % [gained, score])
+			else:
+				skip_scoring = false
 
 			var cleared_cells: Array = current_cleared.keys()
 			var falls := _apply_gravity(cleared_cells)
@@ -985,14 +1106,24 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 				bonuses[final_pos.x][final_pos.y] = spawn["kind"]
 				spawn["pos"] = final_pos
 
+			var emit_spinners: Array = []
+			for sp in pending_spinners:
+				if not extra_spinners.has(sp):
+					emit_spinners.append(sp)
+
+			var emit_rockets: Array = []
+			for rk in pending_rockets:
+				if not extra_rockets.has(rk):
+					emit_rockets.append(rk)
+
 			cascade_step.emit({
 				"matches": match_infos,
 				"cleared": cleared_cells,
 				"bonuses": bonus_spawns,
 				"falls": falls,
 				"refills": refills,
-				"spinners": pending_spinners.duplicate(),
-				"rockets": pending_rockets.duplicate(),
+				"spinners": emit_spinners,
+				"rockets": emit_rockets,
 			})
 
 			has_more_work = true

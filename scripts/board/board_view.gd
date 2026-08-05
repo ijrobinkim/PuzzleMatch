@@ -329,104 +329,119 @@ func _process_cascade_pipeline() -> void:
 				if c != spawn_pos:
 					converging_cells[c] = spawn_pos
 
-		var has_gather_tweens := false
+		var staggered_clears: Array = step.get("staggered_clears", [])
+		if not staggered_clears.is_empty():
+			var max_delay := 0.0
+			for sc in staggered_clears:
+				var delay := randf_range(0.0, 0.45)
+				if delay > max_delay:
+					max_delay = delay
+				_animate_staggered_clear_event(sc, delay)
+			await get_tree().create_timer(0.35 + max_delay).timeout
+		else:
+			var has_gather_tweens := false
 
-		# Collect rocket delays for sequential penetration clear animation
-		var rocket_delay_map: Dictionary = {}
-		var rockets_in_step: Array = step.get("rockets", [])
-		var max_rocket_delay := 0.0
+			# Collect rocket delays for sequential penetration clear animation
+			var rocket_delay_map: Dictionary = {}
+			var rockets_in_step: Array = step.get("rockets", [])
+			var max_rocket_delay := 0.0
 
-		if not rockets_in_step.is_empty():
-			for rk in rockets_in_step:
-				var origin: Vector2i = rk["from"]
-				var kind: String = rk["kind"]
-				_animate_rocket_launch_projectile(origin, kind)
-				if kind == BoardModel.BONUS_ROCKET_H:
-					for x in model.width:
-						var dist := absi(x - origin.x)
-						var c := Vector2i(x, origin.y)
-						var delay: float = dist * 0.045
-						if not rocket_delay_map.has(c) or delay < rocket_delay_map[c]:
-							rocket_delay_map[c] = delay
-						if delay > max_rocket_delay:
-							max_rocket_delay = delay
-				elif kind == BoardModel.BONUS_ROCKET_V:
-					for y in model.height:
-						var dist := absi(y - origin.y)
-						var c := Vector2i(origin.x, y)
-						var delay: float = dist * 0.045
-						if not rocket_delay_map.has(c) or delay < rocket_delay_map[c]:
-							rocket_delay_map[c] = delay
-						if delay > max_rocket_delay:
-							max_rocket_delay = delay
+			if not rockets_in_step.is_empty():
+				for rk in rockets_in_step:
+					var origin: Vector2i = rk["from"]
+					var kind: String = rk["kind"]
+					_animate_rocket_launch_projectile(origin, kind)
+					if kind == BoardModel.BONUS_ROCKET_H:
+						for x in model.width:
+							var dist := absi(x - origin.x)
+							var c := Vector2i(x, origin.y)
+							var delay: float = dist * 0.045
+							if not rocket_delay_map.has(c) or delay < rocket_delay_map[c]:
+								rocket_delay_map[c] = delay
+							if delay > max_rocket_delay:
+								max_rocket_delay = delay
+					elif kind == BoardModel.BONUS_ROCKET_V:
+						for y in model.height:
+							var dist := absi(y - origin.y)
+							var c := Vector2i(origin.x, y)
+							var delay: float = dist * 0.045
+							if not rocket_delay_map.has(c) or delay < rocket_delay_map[c]:
+								rocket_delay_map[c] = delay
+							if delay > max_rocket_delay:
+								max_rocket_delay = delay
 
-		# A. Normal cleared tiles (not part of item creation gathering or spinner impact area)
-		for cell in cleared_cells:
-			if not converging_cells.has(cell):
+			# A. Normal cleared tiles (not part of item creation gathering or spinner impact area)
+			for cell in cleared_cells:
+				if not converging_cells.has(cell):
+					var tile: Tile = _cell_to_tile.get(cell)
+					if tile:
+						var delay: float = rocket_delay_map.get(cell, 0.0)
+						if delay > 0.0:
+							var t_ref := tile
+							get_tree().create_timer(delay).timeout.connect(func():
+								if is_instance_valid(t_ref):
+									t_ref.animate_clear(0.28)
+							)
+						else:
+							tile.animate_clear(0.35)
+						has_gather_tweens = true
+
+			# B. Converging tiles (sliding towards user's target / item position)
+			for cell in converging_cells.keys():
+				var target_spawn_pos: Vector2i = converging_cells[cell]
 				var tile: Tile = _cell_to_tile.get(cell)
 				if tile:
-					var delay: float = rocket_delay_map.get(cell, 0.0)
-					if delay > 0.0:
-						var t_ref := tile
-						get_tree().create_timer(delay).timeout.connect(func():
-							if is_instance_valid(t_ref):
-								t_ref.animate_clear(0.28)
-						)
-					else:
-						tile.animate_clear(0.35)
+					tile.animate_converge_to(target_spawn_pos, CELL_SIZE, 0.32)
 					has_gather_tweens = true
 
-		# B. Converging tiles (sliding towards user's target / item position)
-		for cell in converging_cells.keys():
-			var target_spawn_pos: Vector2i = converging_cells[cell]
-			var tile: Tile = _cell_to_tile.get(cell)
-			if tile:
-				tile.animate_converge_to(target_spawn_pos, CELL_SIZE, 0.32)
-				has_gather_tweens = true
+			# C. Target spawn tile (absorbing / wobble pulse)
+			for spawn_pos in bonus_spawn_map.keys():
+				var target_tile: Tile = _cell_to_tile.get(spawn_pos)
+				if target_tile:
+					target_tile.animate_gather_target(0.32)
+					has_gather_tweens = true
 
-		# C. Target spawn tile (absorbing / wobble pulse)
-		for spawn_pos in bonus_spawn_map.keys():
-			var target_tile: Tile = _cell_to_tile.get(spawn_pos)
-			if target_tile:
-				target_tile.animate_gather_target(0.32)
-				has_gather_tweens = true
+			if has_gather_tweens:
+				var wait_time: float = maxf(0.35, max_rocket_delay + 0.30)
+				await get_tree().create_timer(wait_time).timeout
 
-		if has_gather_tweens:
-			var wait_time: float = maxf(0.35, max_rocket_delay + 0.30)
-			await get_tree().create_timer(wait_time).timeout
+			# Process Spinner cross flash & pinpoint flying propeller animations
+			var spinners_in_step: Array = step.get("spinners", [])
+			if not spinners_in_step.is_empty():
+				for sp in spinners_in_step:
+					_animate_spinner_event(sp)
+				await get_tree().create_timer(0.48).timeout
 
-		# Process Spinner cross flash & pinpoint flying propeller animations
-		var spinners_in_step: Array = step.get("spinners", [])
-		if not spinners_in_step.is_empty():
-			for sp in spinners_in_step:
-				_animate_spinner_event(sp)
-			await get_tree().create_timer(0.48).timeout
-
-		# Clean up cleared & converged tiles (except spawn_pos and spinner_impact_cells)
-		for cell in cleared_cells:
-			if bonus_spawn_map.has(cell):
-				continue
-			var tile: Tile = _cell_to_tile.get(cell)
-			if tile:
-				tile.reset()
-				tile.visible = false
-				_cell_to_tile.erase(cell)
+			# Clean up cleared & converged tiles (except spawn_pos and spinner_impact_cells)
+			for cell in cleared_cells:
+				if bonus_spawn_map.has(cell):
+					continue
+				var tile: Tile = _cell_to_tile.get(cell)
+				if tile:
+					tile.reset()
+					tile.visible = false
+					_cell_to_tile.erase(cell)
 
 		# D. Transform target spawn tiles into Bonus Items with pop animation & particle burst
 		if not bonus_spawn_map.is_empty():
+			var is_electro_stagger: bool = step.get("is_electro_stagger", false)
+			var max_delay := 0.0
 			for spawn_pos in bonus_spawn_map.keys():
 				var b: Dictionary = bonus_spawn_map[spawn_pos]
 				var target_tile: Tile = _cell_to_tile.get(spawn_pos)
+				var delay := randf_range(0.0, 0.35) if is_electro_stagger else 0.0
+				if delay > max_delay:
+					max_delay = delay
+				
 				if target_tile:
-					target_tile.setup(spawn_pos, target_tile.tile_type, b["kind"], CELL_SIZE)
-					target_tile.animate_item_transform(b["kind"], 0.35)
+					_stagger_item_transform(target_tile, spawn_pos, target_tile.tile_type, b["kind"], delay)
 				else:
 					var new_tile := _get_pooled_tile()
-					new_tile.setup(spawn_pos, model.get_tile_type(spawn_pos), b["kind"], CELL_SIZE)
-					new_tile.animate_item_transform(b["kind"], 0.35)
 					_cell_to_tile[spawn_pos] = new_tile
+					_stagger_item_transform(new_tile, spawn_pos, model.get_tile_type(spawn_pos), b["kind"], delay)
 
-			await get_tree().create_timer(0.35).timeout
+			var wait_time := 0.35 + max_delay
+			await get_tree().create_timer(wait_time).timeout
 
 		# Brief pause before gravity fall
 		await get_tree().create_timer(0.08).timeout
@@ -766,3 +781,53 @@ func _animate_rocket_launch_projectile(origin: Vector2i, kind: String) -> void:
 		var tween := create_tween()
 		tween.tween_property(r_sprite, "position", end_pos, duration).set_trans(Tween.TRANS_LINEAR)
 		tween.chain().tween_callback(r_sprite.queue_free)
+
+func _stagger_item_transform(tile: Tile, cell: Vector2i, type: int, kind: String, delay: float) -> void:
+	if delay > 0.0:
+		get_tree().create_timer(delay).timeout.connect(func():
+			if is_instance_valid(tile):
+				tile.setup(cell, type, kind, CELL_SIZE)
+				tile.animate_item_transform(kind, 0.35)
+		)
+	else:
+		tile.setup(cell, type, kind, CELL_SIZE)
+		tile.animate_item_transform(kind, 0.35)
+
+func _animate_staggered_clear_event(sc: Dictionary, delay: float) -> void:
+	if delay > 0.0:
+		get_tree().create_timer(delay).timeout.connect(func():
+			_execute_staggered_clear_immediate(sc)
+		)
+	else:
+		_execute_staggered_clear_immediate(sc)
+
+func _execute_staggered_clear_immediate(sc: Dictionary) -> void:
+	# 1. Clear target tiles
+	var cleared_arr: Array = sc.get("cleared", [])
+	for cell_var in cleared_arr:
+		var cell: Vector2i = cell_var
+		var tile: Tile = _cell_to_tile.get(cell)
+		if tile:
+			_cell_to_tile.erase(cell)
+			var tw := tile.animate_clear(0.35)
+			if tw:
+				tw.chain().tween_callback(func():
+					if is_instance_valid(tile):
+						tile.reset()
+						tile.visible = false
+				)
+			else:
+				tile.reset()
+				tile.visible = false
+
+	# 2. Spawn rockets
+	var rockets_arr: Array = sc.get("rockets", [])
+	for rk_var in rockets_arr:
+		var rk: Dictionary = rk_var
+		_animate_rocket_launch_projectile(rk["from"], rk["kind"])
+
+	# 3. Spawn spinners
+	var spinners_arr: Array = sc.get("spinners", [])
+	for sp_var in spinners_arr:
+		var sp: Dictionary = sp_var
+		_animate_spinner_event(sp)
