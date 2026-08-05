@@ -667,6 +667,22 @@ func _animate_spinner_event(sp: Dictionary) -> void:
 			_spawn_hit_spark_particles(target_pos)
 			flying_prop.queue_free()
 
+			var impact_area: Array = sp.get("impact_area", [target_cell])
+			for c in impact_area:
+				var target_tile: Tile = _cell_to_tile.get(c)
+				if target_tile:
+					_cell_to_tile.erase(c)
+					var tw := target_tile.animate_clear(0.35)
+					if tw:
+						tw.chain().tween_callback(func():
+							if is_instance_valid(target_tile):
+								target_tile.reset()
+								target_tile.visible = false
+						)
+					else:
+						target_tile.reset()
+						target_tile.visible = false
+
 			if item_kind == BoardModel.BONUS_ROCKET_H or item_kind == BoardModel.BONUS_ROCKET_V:
 				_animate_rocket_launch_projectile(target_cell, BoardModel.BONUS_ROCKET_H)
 				_animate_rocket_launch_projectile(target_cell, BoardModel.BONUS_ROCKET_V)
