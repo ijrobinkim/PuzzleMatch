@@ -1,7 +1,7 @@
 extends Node
 ## Game state, versioning and scene transitions.
 
-const GAME_VERSION := "0.0.1.14"
+const GAME_VERSION := "0.0.1.15"
 
 signal scene_changed(scene_path: String)
 signal game_paused(is_paused: bool)
