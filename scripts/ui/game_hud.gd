@@ -1,11 +1,16 @@
 class_name GameHUD
 extends CanvasLayer
 
+signal restart_requested
+signal spawn_specials_requested
+
 const KOREAN_FONT: Font = preload("res://assets/fonts/malgun.ttf")
 
 @onready var version_label: Label = $TopCenter/VersionPanel/VersionLabel
 @onready var scroll_container: ScrollContainer = $BottomFull/LogPanel/MarginContainer/ScrollContainer
 @onready var log_vbox: VBoxContainer = $BottomFull/LogPanel/MarginContainer/ScrollContainer/LogVBox
+@onready var restart_button: Button = get_node_or_null("TopRight/RestartButton")
+@onready var spawn_specials_button: Button = get_node_or_null("TopRight/SpawnSpecialsButton")
 
 const MAX_LOG_LINES := 50
 
@@ -13,8 +18,83 @@ func _ready() -> void:
 	if version_label:
 		version_label.add_theme_font_override("font", KOREAN_FONT)
 		version_label.text = "v" + GameManager.GAME_VERSION
+	_setup_restart_button()
+	_setup_spawn_specials_button()
 	EventBus.log_emitted.connect(_on_log_emitted)
 	_add_log_line("🎮 게임 시작! (버전 v" + GameManager.GAME_VERSION + ")")
+
+func _setup_restart_button() -> void:
+	if restart_button == null:
+		return
+	restart_button.add_theme_font_override("font", KOREAN_FONT)
+	restart_button.add_theme_font_size_override("font_size", 18)
+	restart_button.text = "🔄 새로시작"
+	
+	var style_normal := StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.12, 0.12, 0.18, 0.88)
+	style_normal.border_color = Color(1.0, 0.8, 0.25, 0.95)
+	style_normal.set_border_width_all(2)
+	style_normal.set_corner_radius_all(10)
+	style_normal.shadow_color = Color(0, 0, 0, 0.4)
+	style_normal.shadow_size = 4
+	
+	var style_hover := StyleBoxFlat.new()
+	style_hover.bg_color = Color(0.25, 0.2, 0.08, 0.95)
+	style_hover.border_color = Color(1.0, 0.9, 0.4, 1.0)
+	style_hover.set_border_width_all(2)
+	style_hover.set_corner_radius_all(10)
+	style_hover.shadow_color = Color(1.0, 0.8, 0.2, 0.4)
+	style_hover.shadow_size = 6
+
+	var style_pressed := StyleBoxFlat.new()
+	style_pressed.bg_color = Color(0.4, 0.3, 0.05, 0.95)
+	style_pressed.border_color = Color(1.0, 0.95, 0.6, 1.0)
+	style_pressed.set_border_width_all(2)
+	style_pressed.set_corner_radius_all(10)
+
+	restart_button.add_theme_stylebox_override("normal", style_normal)
+	restart_button.add_theme_stylebox_override("hover", style_hover)
+	restart_button.add_theme_stylebox_override("pressed", style_pressed)
+	restart_button.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8))
+	restart_button.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
+
+	if not restart_button.pressed.is_connected(_on_restart_button_pressed):
+		restart_button.pressed.connect(_on_restart_button_pressed)
+
+func _setup_spawn_specials_button() -> void:
+	if spawn_specials_button == null:
+		return
+	spawn_specials_button.add_theme_font_override("font", KOREAN_FONT)
+	spawn_specials_button.add_theme_font_size_override("font_size", 16)
+	spawn_specials_button.text = "🎁 아이템 랜덤 배치"
+
+	var style_normal := StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.1, 0.2, 0.25, 0.88)
+	style_normal.border_color = Color(0.3, 0.85, 1.0, 0.95)
+	style_normal.set_border_width_all(2)
+	style_normal.set_corner_radius_all(10)
+	style_normal.shadow_color = Color(0, 0, 0, 0.4)
+	style_normal.shadow_size = 4
+
+	var style_hover := StyleBoxFlat.new()
+	style_hover.bg_color = Color(0.15, 0.3, 0.4, 0.95)
+	style_hover.border_color = Color(0.5, 0.95, 1.0, 1.0)
+	style_hover.set_border_width_all(2)
+	style_hover.set_corner_radius_all(10)
+
+	spawn_specials_button.add_theme_stylebox_override("normal", style_normal)
+	spawn_specials_button.add_theme_stylebox_override("hover", style_hover)
+	spawn_specials_button.add_theme_color_override("font_color", Color(0.85, 0.95, 1.0))
+
+	if not spawn_specials_button.pressed.is_connected(_on_spawn_specials_button_pressed):
+		spawn_specials_button.pressed.connect(_on_spawn_specials_button_pressed)
+
+func _on_spawn_specials_button_pressed() -> void:
+	spawn_specials_requested.emit()
+
+func _on_restart_button_pressed() -> void:
+	restart_requested.emit()
+	GameManager.change_scene("res://scenes/screens/game_board_screen.tscn")
 
 func _on_log_emitted(message: String, category: String) -> void:
 	_add_log_line(message, category)

@@ -72,3 +72,26 @@ func test_level_fails_when_moves_run_out_without_reaching_objective():
 	board.attempt_swap(Vector2i(2, 0), Vector2i(2, 1))
 	assert_eq(board.moves_remaining, 0)
 	assert_signal_emitted(board, "level_failed")
+
+func test_swapping_special_item_that_forms_color_match_detonates_item():
+	# Orange gem (3) at (2,1) swapped with Striped Rocket at (1,1).
+	# Column 1 has [0, 3, 3] at (1,0),(1,1),(1,2). Swapping places Orange gem at (1,1), making vertical 3-match!
+	# Striped Rocket moves to (2,1). The swap must create the 3-match AND detonate Rocket at (2,1)!
+	var board := _flat_board(3, 3, [
+		[1, 3, 1],
+		[2, 0, 3], # (1,1) has special item bonus, (2,1) has Orange gem 3
+		[2, 3, 4],
+	])
+	board.bonuses[1][1] = BoardModel.BONUS_ROCKET_H
+	var cascade_steps := []
+	board.cascade_step.connect(func(step): cascade_steps.append(step))
+
+	var result := board.attempt_swap(Vector2i(1, 1), Vector2i(2, 1))
+	assert_true(result)
+	assert_true(cascade_steps.size() > 0)
+	var first_step: Dictionary = cascade_steps[0]
+	# Rocket at (2,1) clears row 1 [(0,1),(1,1),(2,1)] and 3-match clears [(1,0),(1,1),(1,2)]
+	# Cleared cells must include row 1 tiles as well as column 1 match tiles!
+	var cleared: Array = first_step["cleared"]
+	assert_true(cleared.has(Vector2i(0, 1)), "Row 1 left tile cleared by rocket")
+	assert_true(cleared.has(Vector2i(1, 0)), "Col 1 top tile cleared by 3-match")

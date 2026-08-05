@@ -25,6 +25,7 @@ signal level_completed
 signal level_failed
 signal board_reshuffled
 signal log_event(message: String)
+signal special_items_spawned
 
 var width: int
 var height: int
@@ -92,39 +93,46 @@ func get_tile_type(cell: Vector2i) -> int:
 func get_bonus_kind(cell: Vector2i) -> String:
 	return bonuses[cell.x][cell.y]
 
+func _get_effective_type(x: int, y: int) -> int:
+	if bonuses[x][y] != BONUS_NONE:
+		return EMPTY_TYPE
+	return types[x][y]
+
 func find_matches(swap_target: Vector2i = Vector2i(-1, -1)) -> Array:
 	var runs: Array = []
 	for y in height:
 		var run_start := 0
 		for x in range(1, width + 1):
-			var same: bool = x < width and types[x][y] == types[run_start][y]
+			var same: bool = x < width and _get_effective_type(x, y) == _get_effective_type(run_start, y)
 			if not same:
 				var length := x - run_start
-				if length >= 3 and types[run_start][y] != EMPTY_TYPE:
+				var eff_type := _get_effective_type(run_start, y)
+				if length >= 3 and eff_type != EMPTY_TYPE:
 					var cells: Array = []
 					for rx in range(run_start, x):
 						cells.append(Vector2i(rx, y))
-					runs.append({"cells": cells, "dir": "h", "length": length, "color": types[run_start][y]})
+					runs.append({"cells": cells, "dir": "h", "length": length, "color": eff_type})
 				run_start = x
 
 	for x in width:
 		var run_start := 0
 		for y in range(1, height + 1):
-			var same: bool = y < height and types[x][y] == types[x][run_start]
+			var same: bool = y < height and _get_effective_type(x, y) == _get_effective_type(x, run_start)
 			if not same:
 				var length := y - run_start
-				if length >= 3 and types[x][run_start] != EMPTY_TYPE:
+				var eff_type := _get_effective_type(x, run_start)
+				if length >= 3 and eff_type != EMPTY_TYPE:
 					var cells: Array = []
 					for ry in range(run_start, y):
 						cells.append(Vector2i(x, ry))
-					runs.append({"cells": cells, "dir": "v", "length": length, "color": types[x][run_start]})
+					runs.append({"cells": cells, "dir": "v", "length": length, "color": eff_type})
 				run_start = y
 
 	var squares: Array = []
 	for x in range(width - 1):
 		for y in range(height - 1):
-			var c: int = types[x][y]
-			if c != EMPTY_TYPE and types[x+1][y] == c and types[x][y+1] == c and types[x+1][y+1] == c:
+			var c: int = _get_effective_type(x, y)
+			if c != EMPTY_TYPE and _get_effective_type(x+1, y) == c and _get_effective_type(x, y+1) == c and _get_effective_type(x+1, y+1) == c:
 				squares.append({
 					"cells": [Vector2i(x, y), Vector2i(x+1, y), Vector2i(x, y+1), Vector2i(x+1, y+1)],
 					"dir": "sq",
@@ -219,15 +227,20 @@ func find_matches(swap_target: Vector2i = Vector2i(-1, -1)) -> Array:
 		elif has_sq and all_cells.size() <= 6:
 			bonus_kind = BONUS_SPINNER
 		elif max_line_len == 4:
-			bonus_kind = BONUS_ROCKET_H if longest_run["dir"] == "h" else BONUS_ROCKET_V
+			bonus_kind = BONUS_ROCKET_V if longest_run["dir"] == "h" else BONUS_ROCKET_H
 		elif has_h and has_v:
 			bonus_kind = BONUS_BOMB
 
 		if swap_target != Vector2i(-1, -1) and all_cells.has(swap_target):
 			bonus_pos = swap_target
 
+		var line_runs: Array = []
+		for elem in group_members:
+			line_runs.append(elem["cells"].duplicate())
+
 		matches.append({
 			"cells": all_cells,
+			"runs": line_runs,
 			"bonus_kind": bonus_kind,
 			"bonus_pos": bonus_pos,
 			"color": group_members[0]["color"]
@@ -251,10 +264,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 		log_event.emit("[아이템 사용] %s + %s 콤보 발동! (%d,%d)↔(%d,%d)" % [get_bonus_name(bonus_a), get_bonus_name(bonus_b), a.x, a.y, b.x, b.y])
 		swap_committed.emit(a, b)
 		_consume_move()
-		is_busy = true
-		_execute_special_combo(a, bonus_a, b, bonus_b)
-		is_busy = false
-		_check_game_over()
+		_handle_special_combo_async(a, bonus_a, b, bonus_b)
 		return true
 
 	# Case 2: Electro Ball + Color Tile
@@ -282,11 +292,12 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 		_swap_cells(a, b)
 		var matches := find_matches(b)
 		if not matches.is_empty():
-			log_event.emit("[스왑] (%d,%d) ↔ (%d,%d)" % [a.x, a.y, b.x, b.y])
+			var special_cell: Vector2i = b if bonus_a != BONUS_NONE else a
+			log_event.emit("[스왑 & 아이템 발동] (%d,%d) ↔ (%d,%d)" % [a.x, a.y, b.x, b.y])
 			swap_committed.emit(a, b)
 			_consume_move()
 			is_busy = true
-			_resolve_cascade(b)
+			_resolve_cascade(b, special_cell)
 			is_busy = false
 			_check_game_over()
 			return true
@@ -311,7 +322,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 		swap_rejected.emit(a, b)
 		return false
 
-	log_event.emit("[스왑] (%d,%d) ↔ (%d,%d)" % [a.x, a.y, b.x, b.y])
+	log_event.emit("[스왑 성공] (%d,%d) ↔ (%d,%d)" % [a.x, a.y, b.x, b.y])
 	swap_committed.emit(a, b)
 	_consume_move()
 	is_busy = true
@@ -356,13 +367,22 @@ func _swap_cells(a: Vector2i, b: Vector2i) -> void:
 	bonuses[a.x][a.y] = bonuses[b.x][b.y]
 	bonuses[b.x][b.y] = bo
 
-func _execute_special_combo(a: Vector2i, bonus_a: String, b: Vector2i, bonus_b: String) -> void:
+func _handle_special_combo_async(a: Vector2i, bonus_a: String, b: Vector2i, bonus_b: String) -> void:
+	is_busy = true
+	await _execute_special_combo_impl(a, bonus_a, b, bonus_b)
+	is_busy = false
+	_check_game_over()
+
+func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonus_b: String) -> void:
 	bonuses[a.x][a.y] = BONUS_NONE
 	bonuses[b.x][b.y] = BONUS_NONE
 
 	var cleared: Dictionary = {}
 	cleared[a] = true
 	cleared[b] = true
+
+	var custom_rockets: Array = []
+	var custom_spinners: Array = []
 
 	var dirs: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 	var is_rocket_a := (bonus_a == BONUS_ROCKET_H or bonus_a == BONUS_ROCKET_V)
@@ -374,7 +394,9 @@ func _execute_special_combo(a: Vector2i, bonus_a: String, b: Vector2i, bonus_b: 
 				cleared[Vector2i(x, y)] = true
 	elif bonus_a == BONUS_ELECTRO_BALL or bonus_b == BONUS_ELECTRO_BALL:
 		var other_bonus := bonus_b if bonus_a == BONUS_ELECTRO_BALL else bonus_a
-		var target_color := _find_most_common_color()
+		var target_color: int = types[b.x][b.y] if bonus_a == BONUS_ELECTRO_BALL else types[a.x][a.y]
+		if target_color == EMPTY_TYPE:
+			target_color = _find_most_common_color()
 		if target_color != EMPTY_TYPE:
 			for x in width:
 				for y in height:
@@ -386,58 +408,122 @@ func _execute_special_combo(a: Vector2i, bonus_a: String, b: Vector2i, bonus_b: 
 			cleared[Vector2i(x, b.y)] = true
 		for y in height:
 			cleared[Vector2i(b.x, y)] = true
+		custom_rockets.append({"from": b, "kind": BONUS_ROCKET_H})
+		custom_rockets.append({"from": b, "kind": BONUS_ROCKET_V})
 	elif (is_rocket_a and bonus_b == BONUS_BOMB) or (bonus_a == BONUS_BOMB and is_rocket_b):
 		for dy in range(-1, 2):
 			var ry: int = b.y + dy
 			if ry >= 0 and ry < height:
 				for x in width:
 					cleared[Vector2i(x, ry)] = true
+				custom_rockets.append({"from": Vector2i(b.x, ry), "kind": BONUS_ROCKET_H})
 		for dx in range(-1, 2):
 			var rx: int = b.x + dx
 			if rx >= 0 and rx < width:
 				for y in height:
 					cleared[Vector2i(rx, y)] = true
+				custom_rockets.append({"from": Vector2i(rx, b.y), "kind": BONUS_ROCKET_V})
 	elif bonus_a == BONUS_BOMB and bonus_b == BONUS_BOMB:
-		for dx in range(-2, 3):
-			for dy in range(-2, 3):
+		for dx in range(-4, 5):
+			for dy in range(-4, 5):
 				var c: Vector2i = Vector2i(b.x + dx, b.y + dy)
 				if is_in_bounds(c):
 					cleared[c] = true
 	elif bonus_a == BONUS_SPINNER and bonus_b == BONUS_SPINNER:
+		var cross_cells: Array[Vector2i] = []
 		for dir in dirs:
 			var c: Vector2i = b + dir
 			if is_in_bounds(c):
+				cross_cells.append(c)
 				cleared[c] = true
 		var targets := _pick_random_targets(3, [b])
 		for t in targets:
-			cleared[t] = true
+			custom_spinners.append({
+				"from": b,
+				"cross": cross_cells,
+				"target": t,
+				"item_kind": BONUS_SPINNER,
+				"impact_area": [t]
+			})
 	elif (bonus_a == BONUS_SPINNER and is_rocket_b) or (is_rocket_a and bonus_b == BONUS_SPINNER):
+		var cross_cells: Array[Vector2i] = []
 		for dir in dirs:
 			var c: Vector2i = b + dir
 			if is_in_bounds(c):
+				cross_cells.append(c)
 				cleared[c] = true
 		var targets := _pick_random_targets(1, [b])
 		if not targets.is_empty():
 			var t: Vector2i = targets[0]
+			var rocket_area: Array[Vector2i] = []
 			for x in width:
-				cleared[Vector2i(x, t.y)] = true
+				var c := Vector2i(x, t.y)
+				if not rocket_area.has(c):
+					rocket_area.append(c)
 			for y in height:
-				cleared[Vector2i(t.x, y)] = true
+				var c := Vector2i(t.x, y)
+				if not rocket_area.has(c):
+					rocket_area.append(c)
+			custom_spinners.append({
+				"from": b,
+				"cross": cross_cells,
+				"target": t,
+				"item_kind": BONUS_ROCKET_H,
+				"impact_area": rocket_area
+			})
 	elif (bonus_a == BONUS_SPINNER and bonus_b == BONUS_BOMB) or (bonus_a == BONUS_BOMB and bonus_b == BONUS_SPINNER):
+		var cross_cells: Array[Vector2i] = []
 		for dir in dirs:
 			var c: Vector2i = b + dir
 			if is_in_bounds(c):
+				cross_cells.append(c)
 				cleared[c] = true
 		var targets := _pick_random_targets(1, [b])
 		if not targets.is_empty():
 			var t: Vector2i = targets[0]
-			for dx in range(-1, 2):
-				for dy in range(-1, 2):
+			var bomb_area: Array[Vector2i] = []
+			for dx in range(-2, 3):
+				for dy in range(-2, 3):
 					var c: Vector2i = Vector2i(t.x + dx, t.y + dy)
 					if is_in_bounds(c):
-						cleared[c] = true
+						if not bomb_area.has(c):
+							bomb_area.append(c)
+			custom_spinners.append({
+				"from": b,
+				"cross": cross_cells,
+				"target": t,
+				"item_kind": BONUS_BOMB,
+				"impact_area": bomb_area
+			})
 
-	_process_cleared_dict(cleared)
+	# Clear bonuses for blast zone cells so unrelated items on the board do not trigger secondary chain explosions
+	var is_electro_convert := (bonus_a == BONUS_ELECTRO_BALL or bonus_b == BONUS_ELECTRO_BALL) and (bonus_a != bonus_b or bonus_a != BONUS_ELECTRO_BALL)
+	if not is_electro_convert:
+		for c in cleared.keys():
+			bonuses[c.x][c.y] = BONUS_NONE
+
+	_process_cleared_dict(cleared, custom_spinners, custom_rockets)
+
+	# Handle delayed impacts from flying spinners
+	var has_delayed_impact := false
+	for sp in custom_spinners:
+		if sp.has("impact_area"):
+			has_delayed_impact = true
+			break
+	
+	if has_delayed_impact:
+		await Engine.get_main_loop().create_timer(0.48).timeout
+		var impact_cleared: Dictionary = {}
+		for sp in custom_spinners:
+			if sp.has("impact_area"):
+				for c in sp["impact_area"]:
+					impact_cleared[c] = true
+		
+		for c in impact_cleared.keys():
+			if is_in_bounds(c):
+				bonuses[c.x][c.y] = BONUS_NONE
+		
+		_process_cleared_dict(impact_cleared)
 
 func _execute_electro_ball_color_swap(ball_cell: Vector2i, color_cell: Vector2i) -> void:
 	var target_color: int = types[color_cell.x][color_cell.y]
@@ -457,8 +543,15 @@ func _detonate_single_special(cell: Vector2i) -> void:
 	cleared[cell] = true
 	_process_cleared_dict(cleared)
 
-func _process_cleared_dict(cleared: Dictionary) -> void:
-	cleared = _expand_bonus_triggers(cleared)
+func _process_cleared_dict(cleared: Dictionary, extra_spinners: Array = [], extra_rockets: Array = []) -> void:
+	var expand_res := _expand_bonus_triggers(cleared)
+	cleared = expand_res[0]
+	var spinners: Array = expand_res[1]
+	var rockets: Array = expand_res[2]
+
+	spinners.append_array(extra_spinners)
+	rockets.append_array(extra_rockets)
+
 	var gained := cleared.size() * POINTS_PER_TILE
 	score += gained
 	score_changed.emit(score)
@@ -474,12 +567,15 @@ func _process_cleared_dict(cleared: Dictionary) -> void:
 		"bonuses": [],
 		"falls": falls,
 		"refills": refills,
+		"spinners": spinners,
+		"rockets": rockets,
 	})
 
 	_resolve_cascade()
 
-func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1)) -> void:
+func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_cell: Vector2i = Vector2i(-1, -1)) -> void:
 	var matches := find_matches(swap_target)
+	var current_extra_trigger := extra_trigger_cell
 	while not matches.is_empty():
 		var match_infos: Array = []
 		var cleared: Dictionary = {}
@@ -505,7 +601,14 @@ func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1)) -> void:
 			else:
 				log_event.emit("[매치] %s %d개 제거!" % [get_color_name(m["color"]), m["cells"].size()])
 
-		cleared = _expand_bonus_triggers(cleared)
+		if current_extra_trigger != Vector2i(-1, -1):
+			cleared[current_extra_trigger] = true
+			current_extra_trigger = Vector2i(-1, -1)
+
+		var expand_res := _expand_bonus_triggers(cleared)
+		cleared = expand_res[0]
+		var spinners: Array = expand_res[1]
+		var rockets: Array = expand_res[2]
 
 		for spawn in bonus_spawns:
 			cleared.erase(spawn["spawn_pos"])
@@ -534,6 +637,8 @@ func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1)) -> void:
 			"bonuses": bonus_spawns,
 			"falls": falls,
 			"refills": refills,
+			"spinners": spinners,
+			"rockets": rockets,
 		})
 
 		swap_target = Vector2i(-1, -1)
@@ -543,35 +648,57 @@ func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1)) -> void:
 		reshuffle()
 	cascade_finished.emit()
 
-func _expand_bonus_triggers(cleared: Dictionary) -> Dictionary:
+func _expand_bonus_triggers(cleared: Dictionary) -> Array:
 	var changed := true
 	var dirs: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	var processed_bonuses: Dictionary = {}
+	var spinner_events: Array = []
+	var rocket_events: Array = []
+
 	while changed:
 		changed = false
 		for cell in cleared.keys():
+			if processed_bonuses.has(cell):
+				continue
 			var kind: String = bonuses[cell.x][cell.y]
 			if kind == BONUS_NONE:
 				continue
+			processed_bonuses[cell] = true
 			var extra: Array = []
-			if kind == BONUS_ROCKET_H:
-				for x in width:
-					extra.append(Vector2i(x, cell.y))
-			elif kind == BONUS_ROCKET_V:
-				for y in height:
-					extra.append(Vector2i(cell.x, y))
+			if kind == BONUS_ROCKET_H or kind == BONUS_ROCKET_V:
+				rocket_events.append({
+					"from": cell,
+					"kind": kind
+				})
+				if kind == BONUS_ROCKET_H:
+					for x in width:
+						extra.append(Vector2i(x, cell.y))
+				else:
+					for y in height:
+						extra.append(Vector2i(cell.x, y))
 			elif kind == BONUS_BOMB:
-				for dx in range(-1, 2):
-					for dy in range(-1, 2):
+				for dx in range(-2, 3):
+					for dy in range(-2, 3):
 						var c: Vector2i = Vector2i(cell.x + dx, cell.y + dy)
 						if is_in_bounds(c):
 							extra.append(c)
 			elif kind == BONUS_SPINNER:
+				var cross_cells: Array[Vector2i] = []
 				for dir in dirs:
 					var c: Vector2i = cell + dir
 					if is_in_bounds(c):
+						cross_cells.append(c)
 						extra.append(c)
 				var targets := _pick_random_targets(1, [cell])
-				extra.append_array(targets)
+				var target_cell: Vector2i = cell
+				if not targets.is_empty():
+					target_cell = targets[0]
+					extra.append(target_cell)
+				spinner_events.append({
+					"from": cell,
+					"cross": cross_cells,
+					"target": target_cell
+				})
 			elif kind == BONUS_ELECTRO_BALL:
 				var most_common := _find_most_common_color()
 				if most_common != EMPTY_TYPE:
@@ -586,7 +713,8 @@ func _expand_bonus_triggers(cleared: Dictionary) -> Dictionary:
 				if not cleared.has(c):
 					cleared[c] = true
 					changed = true
-	return cleared
+
+	return [cleared, spinner_events, rocket_events]
 
 func _find_most_common_color() -> int:
 	var counts: Dictionary = {}
@@ -604,14 +732,22 @@ func _find_most_common_color() -> int:
 	return best_color
 
 func _pick_random_targets(count: int, exclude: Array) -> Array:
-	var candidates: Array = []
+	var normal_candidates: Array = []
+	var all_candidates: Array = []
 	for x in width:
 		for y in height:
 			var c := Vector2i(x, y)
 			if not exclude.has(c) and types[x][y] != EMPTY_TYPE:
-				candidates.append(c)
-	candidates.shuffle()
-	return candidates.slice(0, count)
+				if bonuses[x][y] == BONUS_NONE:
+					normal_candidates.append(c)
+				all_candidates.append(c)
+
+	normal_candidates.shuffle()
+	if normal_candidates.size() >= count:
+		return normal_candidates.slice(0, count)
+
+	all_candidates.shuffle()
+	return all_candidates.slice(0, count)
 
 func _apply_gravity(cleared_cells: Array) -> Array:
 	var falls: Array = []
@@ -664,72 +800,178 @@ func _would_swap_valid(a: Vector2i, b: Vector2i) -> bool:
 	_swap_cells(a, b)
 	return has_match
 
-func find_hint_move() -> Dictionary:
+func get_all_hint_moves() -> Array:
 	if is_busy:
-		return {}
-
-	for x in width:
-		for y in height:
-			if bonuses[x][y] != BONUS_NONE:
-				return {
-					"target_cells": [Vector2i(x, y)],
-					"swap_a": Vector2i(x, y),
-					"swap_b": Vector2i(x, y)
-				}
+		return []
 
 	var candidates: Array = []
 	for x in width:
 		for y in height:
 			var cell := Vector2i(x, y)
+			var type_cell: int = types[cell.x][cell.y]
+
 			if x + 1 < width:
 				var right := Vector2i(x + 1, y)
+				var type_right: int = types[right.x][right.y]
 				_swap_cells(cell, right)
 				var matches := find_matches()
 				_swap_cells(cell, right)
+
 				if not matches.is_empty():
-					var cell_dict: Dictionary = {}
-					cell_dict[cell] = true
-					cell_dict[right] = true
+					var best_m: Dictionary = matches[0]
+					var best_score: int = best_m["cells"].size()
 					for m in matches:
-						for c in m["cells"]:
-							var real_c := c
-							if c == cell:
-								real_c = right
-							elif c == right:
-								real_c = cell
-							cell_dict[real_c] = true
+						var s: int = m["cells"].size()
+						if m.get("bonus_kind", BONUS_NONE) != BONUS_NONE:
+							s += 20
+						if s > best_score:
+							best_score = s
+							best_m = m
+
+					var cell_dict: Dictionary = {}
+					var active_swaps: Dictionary = {}
+					var match_region_dict: Dictionary = {}
+					var match_line_regions: Array = []
+
+					var m_color: int = best_m.get("color", -1)
+					if type_cell == m_color:
+						active_swaps[cell] = true
+					if type_right == m_color:
+						active_swaps[right] = true
+
+					var runs: Array = best_m.get("runs", [best_m["cells"]])
+					for run in runs:
+						match_line_regions.append(run.duplicate())
+
+					for c in best_m["cells"]:
+						match_region_dict[c] = true
+						var pre_c: Vector2i = c
+						if c == cell:
+							pre_c = right
+						elif c == right:
+							pre_c = cell
+						cell_dict[pre_c] = true
+
+					var bonus_kind: String = best_m.get("bonus_kind", BONUS_NONE)
+					var total_matched: int = match_region_dict.size()
+					var p := 10
+					if total_matched >= 10:
+						p = 100
+					elif total_matched == 9:
+						p = 90
+					elif total_matched == 8:
+						p = 80
+					elif total_matched == 7:
+						p = 70
+					elif total_matched == 6:
+						p = 60
+					elif bonus_kind == BONUS_ELECTRO_BALL or total_matched == 5:
+						p = 50
+					elif bonus_kind == BONUS_BOMB:
+						p = 40
+					elif bonus_kind == BONUS_SPINNER:
+						p = 35
+					elif bonus_kind != BONUS_NONE or total_matched == 4:
+						p = 30
+
 					candidates.append({
 						"target_cells": cell_dict.keys(),
+						"match_region_cells": match_region_dict.keys(),
+						"match_line_regions": match_line_regions,
 						"swap_a": cell,
-						"swap_b": right
+						"swap_b": right,
+						"active_swap_cells": active_swaps.keys(),
+						"priority": p
 					})
+
 			if y + 1 < height:
 				var down := Vector2i(x, y + 1)
+				var type_down: int = types[down.x][down.y]
 				_swap_cells(cell, down)
 				var matches := find_matches()
 				_swap_cells(cell, down)
+
 				if not matches.is_empty():
-					var cell_dict: Dictionary = {}
-					cell_dict[cell] = true
-					cell_dict[down] = true
+					var best_m: Dictionary = matches[0]
+					var best_score: int = best_m["cells"].size()
 					for m in matches:
-						for c in m["cells"]:
-							var real_c := c
-							if c == cell:
-								real_c = down
-							elif c == down:
-								real_c = cell
-							cell_dict[real_c] = true
+						var s: int = m["cells"].size()
+						if m.get("bonus_kind", BONUS_NONE) != BONUS_NONE:
+							s += 20
+						if s > best_score:
+							best_score = s
+							best_m = m
+
+					var cell_dict: Dictionary = {}
+					var active_swaps: Dictionary = {}
+					var match_region_dict: Dictionary = {}
+					var match_line_regions: Array = []
+
+					var m_color: int = best_m.get("color", -1)
+					if type_cell == m_color:
+						active_swaps[cell] = true
+					if type_down == m_color:
+						active_swaps[down] = true
+
+					var runs_down: Array = best_m.get("runs", [best_m["cells"]])
+					for run in runs_down:
+						match_line_regions.append(run.duplicate())
+
+					for c in best_m["cells"]:
+						match_region_dict[c] = true
+						var pre_c: Vector2i = c
+						if c == cell:
+							pre_c = down
+						elif c == down:
+							pre_c = cell
+						cell_dict[pre_c] = true
+
+					var bonus_kind: String = best_m.get("bonus_kind", BONUS_NONE)
+					var total_matched: int = match_region_dict.size()
+					var p := 10
+					if total_matched >= 10:
+						p = 100
+					elif total_matched == 9:
+						p = 90
+					elif total_matched == 8:
+						p = 80
+					elif total_matched == 7:
+						p = 70
+					elif total_matched == 6:
+						p = 60
+					elif bonus_kind == BONUS_ELECTRO_BALL or total_matched == 5:
+						p = 50
+					elif bonus_kind == BONUS_BOMB:
+						p = 40
+					elif bonus_kind == BONUS_SPINNER:
+						p = 35
+					elif bonus_kind != BONUS_NONE or total_matched == 4:
+						p = 30
+
 					candidates.append({
 						"target_cells": cell_dict.keys(),
+						"match_region_cells": match_region_dict.keys(),
+						"match_line_regions": match_line_regions,
 						"swap_a": cell,
-						"swap_b": down
+						"swap_b": down,
+						"active_swap_cells": active_swaps.keys(),
+						"priority": p
 					})
 
 	if candidates.is_empty():
-		return {}
+		return []
 
-	return candidates[0]
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return a.get("priority", 0) > b.get("priority", 0)
+	)
+
+	return candidates
+
+func find_hint_move(hint_index: int = 0) -> Dictionary:
+	var moves := get_all_hint_moves()
+	if moves.is_empty():
+		return {}
+	return moves[hint_index % moves.size()]
 
 func is_hint_target_valid(target: Dictionary) -> bool:
 	if target.is_empty():
@@ -738,10 +980,10 @@ func is_hint_target_valid(target: Dictionary) -> bool:
 	var b: Vector2i = target.get("swap_b", Vector2i(-1, -1))
 	if not is_in_bounds(a) or not is_in_bounds(b):
 		return false
-	if bonuses[a.x][a.y] != BONUS_NONE or bonuses[b.x][b.y] != BONUS_NONE:
-		return true
 	if a == b:
 		return false
+	if bonuses[a.x][a.y] != BONUS_NONE and bonuses[b.x][b.y] != BONUS_NONE:
+		return true
 	return _would_swap_valid(a, b)
 
 func reshuffle() -> bool:
@@ -772,3 +1014,30 @@ func reshuffle() -> bool:
 	push_warning("reshuffle() exhausted all attempts without reaching a valid board state")
 	board_reshuffled.emit()
 	return false
+
+func spawn_random_special_items() -> void:
+	if is_busy:
+		return
+	var valid_cells: Array[Vector2i] = []
+	for x in width:
+		for y in height:
+			if types[x][y] != EMPTY_TYPE and bonuses[x][y] == BONUS_NONE:
+				valid_cells.append(Vector2i(x, y))
+
+	if valid_cells.is_empty():
+		log_event.emit("[디버그] ⚠️ 이미 모든 일반 타일에 특수 아이템이 생성되어 있습니다!")
+		return
+
+	var cell: Vector2i = valid_cells.pick_random()
+	var possible_bonuses: Array[String] = [
+		BONUS_ROCKET_H,
+		BONUS_ROCKET_V,
+		BONUS_BOMB,
+		BONUS_SPINNER,
+		BONUS_ELECTRO_BALL
+	]
+	var bonus: String = possible_bonuses.pick_random()
+	bonuses[cell.x][cell.y] = bonus
+
+	log_event.emit("[디버그] 🎲 (%d,%d) 위치에 %s 1개 생성!" % [cell.x, cell.y, get_bonus_name(bonus)])
+	special_items_spawned.emit()

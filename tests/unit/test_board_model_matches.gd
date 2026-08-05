@@ -34,17 +34,17 @@ func test_horizontal_three_match_has_no_bonus():
 	assert_eq(matches[0]["bonus_kind"], BoardModel.BONUS_NONE)
 	assert_eq(matches[0]["cells"].size(), 3)
 
-func test_horizontal_four_match_creates_rocket_h():
+func test_horizontal_four_match_creates_rocket_v():
 	var board := _flat_board(5, 1, [[0, 0, 0, 0, 1]])
 	var matches := board.find_matches()
 	assert_eq(matches.size(), 1)
-	assert_eq(matches[0]["bonus_kind"], BoardModel.BONUS_ROCKET_H)
+	assert_eq(matches[0]["bonus_kind"], BoardModel.BONUS_ROCKET_V)
 
-func test_vertical_four_match_creates_rocket_v():
+func test_vertical_four_match_creates_rocket_h():
 	var board := _flat_board(1, 5, [[0], [0], [0], [0], [1]])
 	var matches := board.find_matches()
 	assert_eq(matches.size(), 1)
-	assert_eq(matches[0]["bonus_kind"], BoardModel.BONUS_ROCKET_V)
+	assert_eq(matches[0]["bonus_kind"], BoardModel.BONUS_ROCKET_H)
 
 func test_two_by_two_square_creates_spinner():
 	var board := _flat_board(3, 3, [
@@ -80,3 +80,4 @@ func test_find_hint_move_returns_valid_swappable_move():
 	var hint := board.find_hint_move()
 	assert_false(hint.is_empty())
 	assert_true(board.is_hint_target_valid(hint))
+	assert_eq(hint.get("target_cells", []).size(), 3)

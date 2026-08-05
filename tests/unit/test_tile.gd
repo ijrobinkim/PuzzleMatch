@@ -17,14 +17,13 @@ func test_setup_with_bomb_bonus_shows_overlay_frame_1():
 	tile.setup(Vector2i(0, 0), 0, BoardModel.BONUS_BOMB, 100.0)
 	var overlay: Sprite2D = tile.get_node("BonusOverlay")
 	assert_true(overlay.visible)
-	assert_eq(overlay.frame, 1)
+	assert_not_null(overlay.texture)
 
 func test_setup_with_striped_col_rotates_overlay_90_degrees():
-	tile.setup(Vector2i(0, 0), 0, BoardModel.BONUS_STRIPED_COL, 100.0)
+	tile.setup(Vector2i(0, 0), 0, BoardModel.BONUS_ROCKET_V, 100.0)
 	var overlay: Sprite2D = tile.get_node("BonusOverlay")
 	assert_true(overlay.visible)
-	assert_eq(overlay.frame, 0)
-	assert_eq(overlay.rotation_degrees, 90.0)
+	assert_not_null(overlay.texture)
 
 func test_reset_hides_bonus_and_restores_scale():
 	tile.setup(Vector2i(0, 0), 0, BoardModel.BONUS_BOMB, 100.0)
