@@ -16,6 +16,11 @@ var _pending_steps: Array = []
 var _is_animating: bool = false
 var _active_swap_tween: Tween
 
+var _current_hint_target: Dictionary = {}
+var _hint_timer: SceneTreeTimer = null
+var _hint_loop_timer: SceneTreeTimer = null
+var _is_hint_active: bool = false
+
 func start_level(level_data: LevelData) -> void:
 	model = BoardModel.new(level_data)
 	model.cascade_step.connect(_on_cascade_step)
@@ -24,7 +29,11 @@ func start_level(level_data: LevelData) -> void:
 	model.move_consumed.connect(func(remaining: int): EventBus.move_used.emit(remaining))
 	model.level_completed.connect(func(): EventBus.level_completed.emit(level_data.level_id, 3))
 	model.level_failed.connect(func(): EventBus.level_failed.emit(level_data.level_id))
-	model.board_reshuffled.connect(func(): EventBus.board_shuffled.emit())
+	model.board_reshuffled.connect(func():
+		_current_hint_target = {}
+		EventBus.board_shuffled.emit()
+		_schedule_hint_timer()
+	)
 	model.log_event.connect(func(msg: String): EventBus.log_emitted.emit(msg, "board"))
 	EventBus.level_started.emit(level_data.level_id)
 	_render_initial_board()
@@ -37,6 +46,7 @@ func _render_initial_board() -> void:
 			tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
 			tile.animate_spawn(0.3)
 			_cell_to_tile[cell] = tile
+	_schedule_hint_timer()
 
 func _get_pooled_tile() -> Tile:
 	for tile in _tile_pool:
@@ -49,6 +59,7 @@ func _get_pooled_tile() -> Tile:
 	return tile
 
 func _on_swap_committed(a: Vector2i, b: Vector2i) -> void:
+	_cancel_hint_timers()
 	var tile_a: Tile = _cell_to_tile.get(a)
 	var tile_b: Tile = _cell_to_tile.get(b)
 	_cell_to_tile[a] = tile_b
@@ -63,6 +74,7 @@ func _on_swap_committed(a: Vector2i, b: Vector2i) -> void:
 		tile_b.cell = a
 
 func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
+	_cancel_hint_timers()
 	var tile_a: Tile = _cell_to_tile.get(a)
 	var tile_b: Tile = _cell_to_tile.get(b)
 
@@ -79,6 +91,7 @@ func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 	if tile_b:
 		return_tween.tween_property(tile_b, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await return_tween.finished
+	_schedule_hint_timer()
 
 func _on_cascade_step(step: Dictionary) -> void:
 	_pending_steps.append(step)
@@ -86,6 +99,7 @@ func _on_cascade_step(step: Dictionary) -> void:
 		_process_cascade_pipeline()
 
 func _process_cascade_pipeline() -> void:
+	_cancel_hint_timers()
 	_is_animating = true
 
 	# 1. Wait for swap animation to finish completely
@@ -102,24 +116,67 @@ func _process_cascade_pipeline() -> void:
 		for match_info in step["matches"]:
 			EventBus.tiles_matched.emit(match_info["type"], match_info["count"], match_info["position"])
 
-		# 2. Tile breaking / pop particle animation
-		if not step["cleared"].is_empty():
-			var clear_tween := create_tween().set_parallel(true)
-			var has_clear_tweens := false
-			for cell in step["cleared"]:
+		# 2. Tile breaking / pop particle animation & Item gather animation
+		var bonuses_in_step: Array = step.get("bonuses", [])
+		var cleared_cells: Array = step.get("cleared", [])
+
+		var converging_cells: Dictionary = {} # cell -> target_spawn_pos
+		var bonus_spawn_map: Dictionary = {} # spawn_pos -> bonus_dict
+
+		for b in bonuses_in_step:
+			var spawn_pos: Vector2i = b.get("spawn_pos", b["pos"])
+			bonus_spawn_map[spawn_pos] = b
+			var match_cells: Array = b.get("match_cells", [])
+			for c in match_cells:
+				if c != spawn_pos:
+					converging_cells[c] = spawn_pos
+
+		var has_gather_tweens := false
+
+		# A. Normal cleared tiles (not part of item creation gathering)
+		for cell in cleared_cells:
+			if not converging_cells.has(cell):
 				var tile: Tile = _cell_to_tile.get(cell)
 				if tile:
 					tile.animate_clear(0.35)
-					has_clear_tweens = true
-			if has_clear_tweens:
-				await get_tree().create_timer(0.35).timeout
+					has_gather_tweens = true
 
-			for cell in step["cleared"]:
-				var tile: Tile = _cell_to_tile.get(cell)
-				if tile:
-					tile.reset()
-					tile.visible = false
-					_cell_to_tile.erase(cell)
+		# B. Converging tiles (sliding towards user's target / item position)
+		for cell in converging_cells.keys():
+			var target_spawn_pos: Vector2i = converging_cells[cell]
+			var tile: Tile = _cell_to_tile.get(cell)
+			if tile:
+				tile.animate_converge_to(target_spawn_pos, CELL_SIZE, 0.32)
+				has_gather_tweens = true
+
+		# C. Target spawn tile (absorbing / wobble pulse)
+		for spawn_pos in bonus_spawn_map.keys():
+			var target_tile: Tile = _cell_to_tile.get(spawn_pos)
+			if target_tile:
+				target_tile.animate_gather_target(0.32)
+				has_gather_tweens = true
+
+		if has_gather_tweens:
+			await get_tree().create_timer(0.32).timeout
+
+		# Clean up cleared & converged tiles
+		for cell in cleared_cells:
+			var tile: Tile = _cell_to_tile.get(cell)
+			if tile:
+				tile.reset()
+				tile.visible = false
+				_cell_to_tile.erase(cell)
+
+		# D. Transform target spawn tiles into Bonus Items with pop animation & particle burst
+		if not bonus_spawn_map.is_empty():
+			for spawn_pos in bonus_spawn_map.keys():
+				var b: Dictionary = bonus_spawn_map[spawn_pos]
+				var target_tile: Tile = _cell_to_tile.get(spawn_pos)
+				if target_tile:
+					target_tile.setup(spawn_pos, target_tile.tile_type, b["kind"], CELL_SIZE)
+					target_tile.animate_item_transform(b["kind"], 0.35)
+
+			await get_tree().create_timer(0.35).timeout
 
 		# Brief pause before gravity fall
 		await get_tree().create_timer(0.1).timeout
@@ -158,6 +215,64 @@ func _process_cascade_pipeline() -> void:
 
 	_is_animating = false
 
+	if not _current_hint_target.is_empty() and not model.is_hint_target_valid(_current_hint_target):
+		_current_hint_target = {}
+	_schedule_hint_timer()
+
+func _schedule_hint_timer() -> void:
+	_cancel_hint_timers()
+	if model == null or model.is_busy or _is_animating:
+		return
+	var timer := get_tree().create_timer(2.0)
+	_hint_timer = timer
+	timer.timeout.connect(func():
+		if _hint_timer == timer:
+			_hint_timer = null
+			_run_hint_loop()
+	)
+
+func _cancel_hint_timers() -> void:
+	_hint_timer = null
+	_hint_loop_timer = null
+	_stop_active_hint_animations()
+
+func _stop_active_hint_animations() -> void:
+	_is_hint_active = false
+	if _current_hint_target.has("target_cells"):
+		for cell in _current_hint_target["target_cells"]:
+			var tile: Tile = _cell_to_tile.get(cell)
+			if tile:
+				tile.stop_hint()
+
+func _run_hint_loop() -> void:
+	if model == null or model.is_busy or _is_animating:
+		return
+
+	if not _current_hint_target.is_empty():
+		if not model.is_hint_target_valid(_current_hint_target):
+			_current_hint_target = {}
+
+	if _current_hint_target.is_empty():
+		_current_hint_target = model.find_hint_move()
+
+	if _current_hint_target.is_empty():
+		return
+
+	_is_hint_active = true
+	var target_cells: Array = _current_hint_target.get("target_cells", [])
+	for cell in target_cells:
+		var tile: Tile = _cell_to_tile.get(cell)
+		if tile:
+			tile.animate_hint()
+
+	var loop_timer := get_tree().create_timer(1.5)
+	_hint_loop_timer = loop_timer
+	loop_timer.timeout.connect(func():
+		if _hint_loop_timer == loop_timer and _is_hint_active:
+			_hint_loop_timer = null
+			_run_hint_loop()
+	)
+
 func _cell_at_position(local_pos: Vector2) -> Vector2i:
 	return Vector2i(int(local_pos.x / CELL_SIZE), int(local_pos.y / CELL_SIZE))
 
@@ -170,6 +285,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var cell := _cell_at_position(to_local(pos))
 		if not model.is_in_bounds(cell):
 			return
+		_cancel_hint_timers()
 		if pressed:
 			_drag_start_cell = cell
 			_drag_start_pos = pos
@@ -178,6 +294,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventScreenDrag or event is InputEventMouseMotion:
 		if _drag_start_cell == Vector2i(-1, -1):
 			return
+		_cancel_hint_timers()
 		var pos: Vector2 = event.position if event is InputEventScreenDrag else (event as InputEventMouseMotion).position
 		var delta: Vector2 = pos - _drag_start_pos
 		if delta.length() >= DRAG_THRESHOLD:
@@ -196,17 +313,20 @@ func _handle_release(cell: Vector2i) -> void:
 	var start := _drag_start_cell
 	_drag_start_cell = Vector2i(-1, -1)
 	if start != cell:
+		_schedule_hint_timer()
 		return
 	if _selected_cell == Vector2i(-1, -1):
 		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
 			model.activate_special_tile(cell)
 		else:
 			_selected_cell = cell
+		_schedule_hint_timer()
 		return
 	if _selected_cell == cell:
 		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
 			model.activate_special_tile(cell)
 		_selected_cell = Vector2i(-1, -1)
+		_schedule_hint_timer()
 		return
 	var dist := absi(_selected_cell.x - cell.x) + absi(_selected_cell.y - cell.y)
 	if dist == 1:
@@ -218,3 +338,4 @@ func _handle_release(cell: Vector2i) -> void:
 			_selected_cell = Vector2i(-1, -1)
 		else:
 			_selected_cell = cell
+		_schedule_hint_timer()

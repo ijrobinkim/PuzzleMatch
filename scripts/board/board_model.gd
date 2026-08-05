@@ -495,7 +495,12 @@ func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1)) -> void:
 			for cell in m["cells"]:
 				cleared[cell] = true
 			if m["bonus_kind"] != BONUS_NONE:
-				bonus_spawns.append({"pos": m["bonus_pos"], "kind": m["bonus_kind"]})
+				bonus_spawns.append({
+					"pos": m["bonus_pos"],
+					"spawn_pos": m["bonus_pos"],
+					"kind": m["bonus_kind"],
+					"match_cells": m["cells"].duplicate(),
+				})
 				log_event.emit("[아이템 생성] %s 생성! (%d,%d)" % [get_bonus_name(m["bonus_kind"]), m["bonus_pos"].x, m["bonus_pos"].y])
 			else:
 				log_event.emit("[매치] %s %d개 제거!" % [get_color_name(m["color"]), m["cells"].size()])
@@ -503,7 +508,7 @@ func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1)) -> void:
 		cleared = _expand_bonus_triggers(cleared)
 
 		for spawn in bonus_spawns:
-			cleared.erase(spawn["pos"])
+			cleared.erase(spawn["spawn_pos"])
 
 		var gained := cleared.size() * POINTS_PER_TILE
 		score += gained
@@ -515,9 +520,9 @@ func _resolve_cascade(swap_target: Vector2i = Vector2i(-1, -1)) -> void:
 		var refills := _refill_empty_cells()
 
 		for spawn in bonus_spawns:
-			var final_pos: Vector2i = spawn["pos"]
+			var final_pos: Vector2i = spawn["spawn_pos"]
 			for f in falls:
-				if f["from"] == spawn["pos"]:
+				if f["from"] == spawn["spawn_pos"]:
 					final_pos = f["to"]
 					break
 			bonuses[final_pos.x][final_pos.y] = spawn["kind"]
@@ -658,6 +663,76 @@ func _would_swap_valid(a: Vector2i, b: Vector2i) -> bool:
 	var has_match := not find_matches().is_empty()
 	_swap_cells(a, b)
 	return has_match
+
+func find_hint_move() -> Dictionary:
+	if is_busy:
+		return {}
+
+	for x in width:
+		for y in height:
+			if bonuses[x][y] != BONUS_NONE:
+				return {
+					"target_cells": [Vector2i(x, y)],
+					"swap_a": Vector2i(x, y),
+					"swap_b": Vector2i(x, y)
+				}
+
+	var candidates: Array = []
+	for x in width:
+		for y in height:
+			var cell := Vector2i(x, y)
+			if x + 1 < width:
+				var right := Vector2i(x + 1, y)
+				_swap_cells(cell, right)
+				var matches := find_matches()
+				_swap_cells(cell, right)
+				if not matches.is_empty():
+					var cell_dict: Dictionary = {}
+					cell_dict[cell] = true
+					cell_dict[right] = true
+					for m in matches:
+						for c in m["cells"]:
+							cell_dict[c] = true
+					candidates.append({
+						"target_cells": cell_dict.keys(),
+						"swap_a": cell,
+						"swap_b": right
+					})
+			if y + 1 < height:
+				var down := Vector2i(x, y + 1)
+				_swap_cells(cell, down)
+				var matches := find_matches()
+				_swap_cells(cell, down)
+				if not matches.is_empty():
+					var cell_dict: Dictionary = {}
+					cell_dict[cell] = true
+					cell_dict[down] = true
+					for m in matches:
+						for c in m["cells"]:
+							cell_dict[c] = true
+					candidates.append({
+						"target_cells": cell_dict.keys(),
+						"swap_a": cell,
+						"swap_b": down
+					})
+
+	if candidates.is_empty():
+		return {}
+
+	return candidates[0]
+
+func is_hint_target_valid(target: Dictionary) -> bool:
+	if target.is_empty():
+		return false
+	var a: Vector2i = target.get("swap_a", Vector2i(-1, -1))
+	var b: Vector2i = target.get("swap_b", Vector2i(-1, -1))
+	if not is_in_bounds(a) or not is_in_bounds(b):
+		return false
+	if bonuses[a.x][a.y] != BONUS_NONE or bonuses[b.x][b.y] != BONUS_NONE:
+		return true
+	if a == b:
+		return false
+	return _would_swap_valid(a, b)
 
 func reshuffle() -> bool:
 	log_event.emit("[보드] 이동 가능한 매치가 없어 판을 섞습니다!")

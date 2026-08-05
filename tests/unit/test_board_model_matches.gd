@@ -73,3 +73,10 @@ func test_five_in_a_line_creates_electro_ball():
 	var matches := board.find_matches()
 	assert_eq(matches.size(), 1)
 	assert_eq(matches[0]["bonus_kind"], BoardModel.BONUS_ELECTRO_BALL)
+
+func test_find_hint_move_returns_valid_swappable_move():
+	# Board where swapping (2,0) and (3,0) creates a 3-match of color 0
+	var board := _flat_board(4, 1, [[0, 0, 1, 0]])
+	var hint := board.find_hint_move()
+	assert_false(hint.is_empty())
+	assert_true(board.is_hint_target_valid(hint))
