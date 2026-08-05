@@ -45,6 +45,14 @@ jobs:
           mkdir -p build/web
           "$GODOT_BIN" --headless --export-release "Web" "$PWD/build/web/index.html" --verbose
 
+      - name: Apply Cache-Busting to Web Build
+        run: |
+          set -eux
+          BUILD_HASH="${GITHUB_SHA::8}"
+          sed -i "s/index\.pck/index\.pck?v=${BUILD_HASH}/g" build/web/index.js build/web/index.html || true
+          sed -i "s/index\.wasm/index\.wasm?v=${BUILD_HASH}/g" build/web/index.js build/web/index.html || true
+          sed -i "s/index\.js/index\.js?v=${BUILD_HASH}/g" build/web/index.html || true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

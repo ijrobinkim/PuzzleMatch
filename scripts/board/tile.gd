@@ -1,11 +1,17 @@
 class_name Tile
 extends Node2D
 
-@onready var sprite: Sprite2D = $Sprite
-@onready var bonus_overlay: Sprite2D = $BonusOverlay
+var sprite: Sprite2D
+var bonus_overlay: Sprite2D
 
 var cell: Vector2i
 var tile_type: int = -1
+
+func _ensure_nodes() -> void:
+	if sprite == null:
+		sprite = get_node_or_null("Sprite")
+	if bonus_overlay == null:
+		bonus_overlay = get_node_or_null("BonusOverlay")
 
 static func get_tile_color(type: int) -> Color:
 	match type:
@@ -18,16 +24,22 @@ static func get_tile_color(type: int) -> Color:
 		_: return Color.WHITE
 
 func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) -> void:
+	_ensure_nodes()
 	cell = p_cell
 	tile_type = p_type
 	position = Vector2(cell.x, cell.y) * cell_size
-	sprite.frame = max(0, p_type)
-	bonus_overlay.rotation_degrees = 0.0
-	bonus_overlay.modulate = Color.WHITE
-	bonus_overlay.scale = Vector2.ONE
+	if sprite:
+		sprite.frame = max(0, p_type)
+	if bonus_overlay:
+		bonus_overlay.rotation_degrees = 0.0
+		bonus_overlay.modulate = Color.WHITE
+		bonus_overlay.scale = Vector2.ONE
 	rotation_degrees = 0.0
 	scale = Vector2.ONE
 	modulate = Color.WHITE
+
+	if bonus_overlay == null:
+		return
 
 	match bonus_kind:
 		BoardModel.BONUS_NONE:
@@ -54,11 +66,13 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 			bonus_overlay.modulate = Color(1.0, 0.85, 0.2)
 
 func reset() -> void:
+	_ensure_nodes()
 	tile_type = -1
-	bonus_overlay.visible = false
-	bonus_overlay.rotation_degrees = 0.0
-	bonus_overlay.modulate = Color.WHITE
-	bonus_overlay.scale = Vector2.ONE
+	if bonus_overlay:
+		bonus_overlay.visible = false
+		bonus_overlay.rotation_degrees = 0.0
+		bonus_overlay.modulate = Color.WHITE
+		bonus_overlay.scale = Vector2.ONE
 	rotation_degrees = 0.0
 	scale = Vector2.ONE
 	modulate = Color.WHITE
