@@ -692,7 +692,12 @@ func find_hint_move() -> Dictionary:
 					cell_dict[right] = true
 					for m in matches:
 						for c in m["cells"]:
-							cell_dict[c] = true
+							var real_c := c
+							if c == cell:
+								real_c = right
+							elif c == right:
+								real_c = cell
+							cell_dict[real_c] = true
 					candidates.append({
 						"target_cells": cell_dict.keys(),
 						"swap_a": cell,
@@ -709,7 +714,12 @@ func find_hint_move() -> Dictionary:
 					cell_dict[down] = true
 					for m in matches:
 						for c in m["cells"]:
-							cell_dict[c] = true
+							var real_c := c
+							if c == cell:
+								real_c = down
+							elif c == down:
+								real_c = cell
+							cell_dict[real_c] = true
 					candidates.append({
 						"target_cells": cell_dict.keys(),
 						"swap_a": cell,
