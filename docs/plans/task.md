@@ -21,6 +21,8 @@
 | TASK-19 | Fix ElementFactory Default Element Registrations for Rendering | Done | Registered built-in element script mapping in ElementFactory so elements appear in demo & board levels |
 | TASK-20 | Create GameBoardScreenTest Unit Test (TDD RED) | Done | Created failing test in test_game_board_screen_test.gd |
 | TASK-21 | Create GameBoardScreenTest Controller & Scene (TDD GREEN) | Done | Created game_board_screen_test.gd & game_board_screen_test.tscn |
+| TASK-22 | Ensure Box Obstacles Replace Underlying Gem Tiles | Done | Set EMPTY_TYPE tile type for obstacles in BoardModel and hide Tile node in Tile.setup |
+
 
 
 
