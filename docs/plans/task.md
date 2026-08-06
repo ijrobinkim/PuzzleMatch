@@ -16,6 +16,9 @@
 | TASK-14 | Execute Task 9 (BoardView Element Rendering & Damage Animations TDD) | Done | TDD RED -> GREEN verified, committed BoardView element rendering and setup |
 | TASK-15 | Execute Task 10 (SteamBombElement Turn Countdown Bomb TDD) | Done | TDD RED -> GREEN verified, committed `steam_bomb_element.gd` & `test_steam_bomb_element.gd` |
 | TASK-16 | Execute Task 11 (DragonBoxElement 2-Layer Moving Nest TDD) | Done | TDD RED -> GREEN verified, committed `dragon_box_element.gd` & `test_dragon_box_element.gd` |
+| TASK-17 | Execute Task 12 (Royal Kingdom Levels 1-5 Resources TDD) | Done | TDD RED -> GREEN verified, committed `level_001.tres` ~ `level_005.tres` & `test_royal_kingdom_levels.gd` |
+
+
 
 
 
