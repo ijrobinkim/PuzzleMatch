@@ -14,6 +14,11 @@
 | TASK-12 | Execute Task 7 (BoardModel Element Integration TDD) | Done | TDD RED -> GREEN verified, committed BoardModel element mapping & damage propagation |
 | TASK-13 | Execute Task 8 (Funconomy Objective Victory System TDD) | Done | TDD RED -> GREEN verified, committed Funconomy target objectives & victory checks |
 | TASK-14 | Execute Task 9 (BoardView Element Rendering & Damage Animations TDD) | Done | TDD RED -> GREEN verified, committed BoardView element rendering and setup |
+| TASK-15 | Execute Task 10 (SteamBombElement Turn Countdown Bomb TDD) | Done | TDD RED -> GREEN verified, committed `steam_bomb_element.gd` & `test_steam_bomb_element.gd` |
+| TASK-16 | Execute Task 11 (DragonBoxElement 2-Layer Moving Nest TDD) | Done | TDD RED -> GREEN verified, committed `dragon_box_element.gd` & `test_dragon_box_element.gd` |
+
+
+
 
 
 
