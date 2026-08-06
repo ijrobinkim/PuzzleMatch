@@ -123,6 +123,8 @@ func set_element(cell: Vector2i, element: BaseElement) -> void:
 	else:
 		elements_map[cell] = element
 		element.grid_position = cell
+		if element.is_obstacle and not element.allows_falling:
+			types[cell.x][cell.y] = EMPTY_TYPE
 		if not element.element_destroyed.is_connected(_on_element_destroyed):
 			element.element_destroyed.connect(_on_element_destroyed)
 
@@ -169,7 +171,13 @@ func damage_adjacent_elements(cleared_cells: Array) -> void:
 func _get_effective_type(x: int, y: int) -> int:
 	if bonuses[x][y] != BONUS_NONE:
 		return EMPTY_TYPE
+	var cell := Vector2i(x, y)
+	if elements_map.has(cell):
+		var elem: BaseElement = elements_map[cell]
+		if elem and elem.is_obstacle:
+			return EMPTY_TYPE
 	return types[x][y]
+
 
 func find_matches(swap_target: Vector2i = Vector2i(-1, -1)) -> Array:
 	var runs: Array = []

@@ -58,8 +58,16 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 	tile_type = p_type
 	self.bonus_kind = bonus_kind
 	position = Vector2(cell.x, cell.y) * cell_size
+
+	if p_type == -1 and bonus_kind == BoardModel.BONUS_NONE:
+		visible = false
+		return
+	else:
+		visible = true
+
 	if sprite:
 		sprite.frame = max(0, p_type)
+
 	if bonus_overlay:
 		bonus_overlay.rotation_degrees = 0.0
 		bonus_overlay.modulate = Color.WHITE
