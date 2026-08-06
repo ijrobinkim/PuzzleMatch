@@ -130,8 +130,10 @@ func _render_elements() -> void:
 		if elem != null and is_instance_valid(elem):
 			if not elem.get_parent():
 				add_child(elem)
-			elem.position = Vector2(cell.x, cell.y) * CELL_SIZE
+			elem.position = Vector2(cell.x + 0.5, cell.y + 0.5) * CELL_SIZE
+			elem.z_index = 10
 			_element_nodes[cell] = elem
+
 
 func has_element_node_at(cell: Vector2i) -> bool:
 	return _element_nodes.has(cell) and is_instance_valid(_element_nodes[cell])

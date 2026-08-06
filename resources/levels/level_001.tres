@@ -13,4 +13,20 @@ objective = 1000
 target_objectives = {
 "box": 4
 }
-initial_elements = []
+initial_elements = [{
+"id": "box",
+"x": 2,
+"y": 2
+}, {
+"id": "box",
+"x": 5,
+"y": 2
+}, {
+"id": "box",
+"x": 2,
+"y": 5
+}, {
+"id": "box",
+"x": 5,
+"y": 5
+}]

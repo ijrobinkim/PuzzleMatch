@@ -73,8 +73,25 @@ func _init(level_data: LevelData, rng_seed: int = -1) -> void:
 	_fill_random_grid()
 	while not find_matches().is_empty():
 		_fill_random_grid()
+	_load_initial_elements(level_data)
 	if not has_any_valid_move():
 		reshuffle()
+
+func _load_initial_elements(level_data: LevelData) -> void:
+	if level_data.initial_elements.is_empty():
+		return
+	var factory := ElementFactory.new()
+	for item in level_data.initial_elements:
+		if item is Dictionary:
+			var cell := Vector2i(item.get("x", 0), item.get("y", 0))
+			if item.has("pos"):
+				cell = Vector2i(item["pos"])
+			var elem_id: String = item.get("id", "")
+			if not elem_id.is_empty():
+				var elem := factory.create_element(elem_id)
+				if elem:
+					set_element(cell, elem)
+
 
 
 func _fill_random_grid() -> void:

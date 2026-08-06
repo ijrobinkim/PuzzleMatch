@@ -13,4 +13,36 @@ objective = 800
 target_objectives = {
 "box": 8
 }
-initial_elements = []
+initial_elements = [{
+"id": "box",
+"x": 1,
+"y": 1
+}, {
+"id": "box",
+"x": 6,
+"y": 1
+}, {
+"id": "box",
+"x": 1,
+"y": 6
+}, {
+"id": "box",
+"x": 6,
+"y": 6
+}, {
+"id": "box",
+"x": 3,
+"y": 3
+}, {
+"id": "box",
+"x": 4,
+"y": 3
+}, {
+"id": "box",
+"x": 3,
+"y": 4
+}, {
+"id": "box",
+"x": 4,
+"y": 4
+}]

@@ -14,4 +14,48 @@ target_objectives = {
 "box": 6,
 "ivy": 5
 }
-initial_elements = []
+initial_elements = [{
+"id": "ivy",
+"x": 4,
+"y": 4
+}, {
+"id": "ivy",
+"x": 3,
+"y": 4
+}, {
+"id": "ivy",
+"x": 5,
+"y": 4
+}, {
+"id": "ivy",
+"x": 4,
+"y": 3
+}, {
+"id": "ivy",
+"x": 4,
+"y": 5
+}, {
+"id": "box",
+"x": 1,
+"y": 1
+}, {
+"id": "box",
+"x": 7,
+"y": 1
+}, {
+"id": "box",
+"x": 1,
+"y": 7
+}, {
+"id": "box",
+"x": 7,
+"y": 7
+}, {
+"id": "box",
+"x": 2,
+"y": 2
+}, {
+"id": "box",
+"x": 6,
+"y": 6
+}]

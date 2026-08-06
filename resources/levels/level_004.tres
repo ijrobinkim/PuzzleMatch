@@ -13,4 +13,44 @@ objective = 1200
 target_objectives = {
 "snow": 10
 }
-initial_elements = []
+initial_elements = [{
+"id": "snow",
+"x": 2,
+"y": 2
+}, {
+"id": "snow",
+"x": 3,
+"y": 2
+}, {
+"id": "snow",
+"x": 4,
+"y": 2
+}, {
+"id": "snow",
+"x": 5,
+"y": 2
+}, {
+"id": "snow",
+"x": 6,
+"y": 2
+}, {
+"id": "snow",
+"x": 2,
+"y": 6
+}, {
+"id": "snow",
+"x": 3,
+"y": 6
+}, {
+"id": "snow",
+"x": 4,
+"y": 6
+}, {
+"id": "snow",
+"x": 5,
+"y": 6
+}, {
+"id": "snow",
+"x": 6,
+"y": 6
+}]
