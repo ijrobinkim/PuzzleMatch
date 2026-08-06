@@ -4,13 +4,13 @@
 
 [resource]
 script = ExtResource("1")
-level_id = "level_001"
+level_id = "level_002"
 grid_width = 8
 grid_height = 8
-tile_type_count = 6
-move_limit = 20
-objective = 1000
+tile_type_count = 5
+move_limit = 22
+objective = 800
 target_objectives = {
-"box": 4
+"box": 8
 }
 initial_elements = []
