@@ -9,6 +9,11 @@
 | TASK-07 | Execute Task 2 (LevelData & ElementFactory TDD) | Done | TDD RED -> GREEN verified, committed `element_factory.gd` & `level_data.gd` |
 | TASK-08 | Execute Task 3 (LayeredElement TDD) | Done | TDD RED -> GREEN verified, committed `layered_element.gd` & `test_layered_element.gd` |
 | TASK-09 | Execute Task 4 (SpreaderElement TDD) | Done | TDD RED -> GREEN verified, committed `spreader_element.gd` & `test_spreader_element.gd` |
+| TASK-10 | Execute Task 5 (SpawnerElement TDD) | Done | TDD RED -> GREEN verified, committed `spawner_element.gd` & `test_spawner_element.gd` |
+| TASK-11 | Execute Task 6 (Concrete Elements TDD) | Done | TDD RED -> GREEN verified, committed Box, Snow, Ivy, Column, Birdhouse scripts |
+
+
+
 
 
 
