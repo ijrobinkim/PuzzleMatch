@@ -36,6 +36,7 @@ var elements_map: Dictionary = {}
 var moves_remaining: int
 var score: int = 0
 var objective: int
+var target_objectives_remaining: Dictionary = {}
 var is_busy: bool = false
 var _rng := RandomNumberGenerator.new()
 
@@ -64,6 +65,7 @@ func _init(level_data: LevelData, rng_seed: int = -1) -> void:
 	tile_type_count = level_data.tile_type_count
 	moves_remaining = level_data.move_limit
 	objective = level_data.objective
+	target_objectives_remaining = level_data.target_objectives.duplicate()
 	if rng_seed >= 0:
 		_rng.seed = rng_seed
 	else:
@@ -73,6 +75,7 @@ func _init(level_data: LevelData, rng_seed: int = -1) -> void:
 		_fill_random_grid()
 	if not has_any_valid_move():
 		reshuffle()
+
 
 func _fill_random_grid() -> void:
 	types.clear()
@@ -112,10 +115,22 @@ func get_element(cell: Vector2i) -> BaseElement:
 	return null
 
 func _on_element_destroyed(element: BaseElement) -> void:
+	if element != null and not element.element_id.is_empty():
+		if target_objectives_remaining.has(element.element_id):
+			target_objectives_remaining[element.element_id] = max(0, target_objectives_remaining[element.element_id] - 1)
+			if target_objectives_remaining[element.element_id] <= 0:
+				target_objectives_remaining.erase(element.element_id)
+
 	for cell in elements_map.keys():
 		if elements_map[cell] == element:
 			elements_map.erase(cell)
 			break
+
+func is_objective_completed() -> bool:
+	if not target_objectives_remaining.is_empty():
+		return false
+	return score >= objective
+
 
 func damage_adjacent_elements(cleared_cells: Array) -> void:
 	var damaged_targets: Dictionary = {}
