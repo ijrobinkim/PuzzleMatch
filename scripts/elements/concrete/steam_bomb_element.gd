@@ -18,9 +18,14 @@ func on_turn_passed() -> void:
 		return
 	turns_remaining -= 1
 	countdown_updated.emit(self, turns_remaining)
+	queue_redraw()
 	if turns_remaining <= 0:
 		explode()
 
 func explode() -> void:
 	bomb_exploded.emit(self)
 	destroy()
+
+func _get_element_icon() -> String:
+	return "💣" + str(turns_remaining)
+
