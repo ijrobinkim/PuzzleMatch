@@ -7,7 +7,9 @@ const TILE_SCENE: PackedScene = preload("res://scenes/board/tile.tscn")
 var model: BoardModel
 var _tile_pool: Array = []
 var _cell_to_tile: Dictionary = {}
+var _element_nodes: Dictionary = {}
 var _selected_cell := Vector2i(-1, -1)
+
 var _drag_start_cell := Vector2i(-1, -1)
 var _drag_start_pos := Vector2.ZERO
 const DRAG_THRESHOLD := 30.0
@@ -83,11 +85,25 @@ class HintOutlineDrawer extends Node2D:
 		for seg in segments:
 			draw_line(seg[0], seg[1], line_color, line_width, true)
 
+func setup(board_model: BoardModel, level_data: LevelData) -> void:
+	model = board_model
+	_bind_model_signals(level_data)
+	EventBus.level_started.emit(level_data.level_id)
+	_render_initial_board()
+
 func start_level(level_data: LevelData) -> void:
 	model = BoardModel.new(level_data)
-	model.cascade_step.connect(_on_cascade_step)
-	model.swap_committed.connect(_on_swap_committed)
-	model.swap_rejected.connect(_on_swap_rejected)
+	_bind_model_signals(level_data)
+	EventBus.level_started.emit(level_data.level_id)
+	_render_initial_board()
+
+func _bind_model_signals(level_data: LevelData) -> void:
+	if not model.cascade_step.is_connected(_on_cascade_step):
+		model.cascade_step.connect(_on_cascade_step)
+	if not model.swap_committed.is_connected(_on_swap_committed):
+		model.swap_committed.connect(_on_swap_committed)
+	if not model.swap_rejected.is_connected(_on_swap_rejected):
+		model.swap_rejected.connect(_on_swap_rejected)
 	model.move_consumed.connect(func(remaining: int): EventBus.move_used.emit(remaining))
 	model.level_completed.connect(func(): EventBus.level_completed.emit(level_data.level_id, 3))
 	model.level_failed.connect(func(): EventBus.level_failed.emit(level_data.level_id))
@@ -105,8 +121,21 @@ func start_level(level_data: LevelData) -> void:
 				tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
 				tile.animate_gather_target(0.25)
 	)
-	EventBus.level_started.emit(level_data.level_id)
-	_render_initial_board()
+
+func _render_elements() -> void:
+	if model == null:
+		return
+	for cell in model.elements_map.keys():
+		var elem: BaseElement = model.elements_map[cell]
+		if elem != null and is_instance_valid(elem):
+			if not elem.get_parent():
+				add_child(elem)
+			elem.position = Vector2(cell.x, cell.y) * CELL_SIZE
+			_element_nodes[cell] = elem
+
+func has_element_node_at(cell: Vector2i) -> bool:
+	return _element_nodes.has(cell) and is_instance_valid(_element_nodes[cell])
+
 
 func _ensure_tile_at(cell: Vector2i) -> Tile:
 	var tile: Tile = _cell_to_tile.get(cell)
@@ -123,7 +152,9 @@ func _render_initial_board() -> void:
 			tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
 			tile.animate_spawn(0.3)
 			_cell_to_tile[cell] = tile
+	_render_elements()
 	_schedule_hint_timer()
+
 
 func _get_pooled_tile() -> Tile:
 	for tile in _tile_pool:
@@ -595,6 +626,8 @@ func _schedule_hint_timer() -> void:
 	_cancel_hint_timers()
 	if model == null or model.is_busy or _is_animating:
 		return
+	if not is_inside_tree() or get_tree() == null:
+		return
 	var timer := get_tree().create_timer(2.0)
 	_hint_timer = timer
 	timer.timeout.connect(func():
@@ -602,6 +635,7 @@ func _schedule_hint_timer() -> void:
 			_hint_timer = null
 			_run_hint_loop()
 	)
+
 
 func _show_hint_region_boxes(cells: Array) -> void:
 	if _hint_outline_drawer == null:
