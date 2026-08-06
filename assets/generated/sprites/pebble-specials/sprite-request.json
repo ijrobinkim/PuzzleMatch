@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "kind": "sprite-gen-request",
+  "engine": "component-row",
+  "character": {
+    "id": "pebble-specials",
+    "description": "Special match-3 booster items (bomb, rocket_h, rocket_v, spinner, electro_ball) reskinned in the same rounded pebble/stone toon material as the pebble-gem tile set",
+    "base_image": "base-source.png"
+  },
+  "cell": {
+    "shape": "square",
+    "width": 128,
+    "height": 128,
+    "safe_margin_x": 12,
+    "safe_margin_y": 12,
+    "size": 128,
+    "safe_margin": 12
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "states": {
+    "bomb": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a round chunky bomb built from the same rounded pebble/stone material and toon-shading style as the attached grey base reference (same outline weight, same glossy top highlight, same 3-4 band shading), dark charcoal-grey stone body, with a single short curved fuse sticking out the top ending in a small bright orange-yellow lit spark/flame. Silhouette must clearly read as a bomb: round body, single fuse, spark on top. No crown, no gold ornaments, no text."
+    },
+    "rocket_h": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky toy rocket built from the same rounded pebble/stone material and toon-shading style as the attached grey base reference (same outline weight, same glossy highlight, same shading bands), oriented pointing to the right (horizontal), warm red-orange stone body with a lighter rounded nose cone tip and two small triangular fins near the tail, a soft rounded orange flame puff at the tail end. Keep the chunky rounded pebble silhouette language, not sharp metal panels."
+    },
+    "rocket_v": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky toy rocket built from the same rounded pebble/stone material and toon-shading style as the attached grey base reference (same outline weight, same glossy highlight, same shading bands), oriented pointing straight up (vertical), cool blue stone body with a lighter rounded nose cone tip and two small triangular fins near the bottom, a soft rounded orange flame puff at the bottom end. Keep the chunky rounded pebble silhouette language, not sharp metal panels."
+    },
+    "spinner": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a four-bladed pinwheel spinner where each blade is a small chunky rounded pebble/stone shape (teardrop/petal shaped stones) built from the same toon-shading style as the attached grey base reference (same outline weight, same glossy highlight, same shading bands), arranged around a center hub stone, each of the 4 blades a different saturated color (red, blue, yellow, purple) so it still reads as a colorful spinner, with a small round grey stone hub in the center."
+    },
+    "electro_ball": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a round glowing orb built from the same rounded pebble/stone material and toon-shading style as the attached grey base reference (same outline weight, same glossy top highlight, same 3-4 band shading), deep indigo-purple stone body with 2-3 bright cyan-white jagged lightning-bolt cracks of light across its surface and a soft cyan glow rim, reading clearly as an electric/energy special-item ball."
+    }
+  },
+  "style": "match the attached base/anchor reference image EXACTLY: same pixel density (logical pixel block size), same body proportions, same outline weight, same palette, same shading style, same level of detail. Do not restyle, do not change proportions, do not add or remove detail density. Avoid polished illustration, painterly rendering, anime key art, 3D render, vector app-icon polish, glossy lighting, soft gradients, and anti-aliased high-detail edges.",
+  "motion_phase_guides": false,
+  "layout": "taxonomy/v1",
+  "chroma": {
+    "mode": "rgb",
+    "unmix_reach": 4,
+    "spill_max_fraction": 0.005
+  }
+}

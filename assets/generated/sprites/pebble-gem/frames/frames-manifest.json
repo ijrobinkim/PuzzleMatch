@@ -1,0 +1,342 @@
+{
+  "ok": true,
+  "engine": "component-row",
+  "engine_revision": "6faba1124767",
+  "extract_args": {},
+  "run_dir": "E:\\1111_WORK\\000000_Project\\RoyalPuzzle\\assets\\generated\\sprites\\pebble-gem",
+  "cell": {
+    "shape": "square",
+    "width": 128,
+    "height": 128,
+    "safe_margin_x": 12,
+    "safe_margin_y": 12,
+    "size": 128,
+    "safe_margin": 12
+  },
+  "chroma_key": {
+    "name": "green",
+    "hex": "#00FF00",
+    "rgb": [
+      0,
+      255,
+      0
+    ],
+    "selection": "manual"
+  },
+  "rows": [
+    {
+      "state": "green",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/green/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8917,
+          "bbox": [
+            12,
+            12,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "idle",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/idle/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8929,
+          "bbox": [
+            12,
+            12,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "red",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/red/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8922,
+          "bbox": [
+            12,
+            12,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "blue",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/blue/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8925,
+          "bbox": [
+            12,
+            12,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "yellow",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/yellow/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8923,
+          "bbox": [
+            12,
+            12,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "purple",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/purple/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8920,
+          "bbox": [
+            12,
+            12,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "orange",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/orange/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8920,
+          "bbox": [
+            12,
+            12,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "red_shield",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/red_shield/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8177,
+          "bbox": [
+            18,
+            12,
+            110,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "blue_diamond",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/blue_diamond/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 6371,
+          "bbox": [
+            12,
+            20,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "green_leaf",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/green_leaf/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 7176,
+          "bbox": [
+            17,
+            12,
+            110,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "yellow_crown",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/yellow_crown/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 7255,
+          "bbox": [
+            12,
+            15,
+            116,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "purple_castle",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/purple_castle/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 7384,
+          "bbox": [
+            22,
+            12,
+            106,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "orange_key",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/orange_key/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 3191,
+          "bbox": [
+            34,
+            12,
+            85,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

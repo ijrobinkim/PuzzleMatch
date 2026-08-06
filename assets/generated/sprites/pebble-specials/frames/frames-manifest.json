@@ -1,0 +1,102 @@
+{
+  "ok": true,
+  "engine": "component-row",
+  "engine_revision": "6faba1124767",
+  "extract_args": {},
+  "run_dir": "E:\\1111_WORK\\000000_Project\\RoyalPuzzle\\assets\\generated\\sprites\\pebble-specials",
+  "cell": {
+    "shape": "square",
+    "width": 128,
+    "height": 128,
+    "safe_margin_x": 12,
+    "safe_margin_y": 12,
+    "size": 128,
+    "safe_margin": 12
+  },
+  "chroma_key": {
+    "name": "green",
+    "hex": "#00FF00",
+    "rgb": [
+      0,
+      255,
+      0
+    ],
+    "selection": "manual"
+  },
+  "rows": [
+    {
+      "state": "rocket_h",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/rocket_h/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 4427,
+          "bbox": [
+            15,
+            54,
+            119,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "rocket_v",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/rocket_v/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 3957,
+          "bbox": [
+            36,
+            12,
+            92,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    },
+    {
+      "state": "spinner",
+      "frames": 1,
+      "method": "components",
+      "files": [
+        "frames/spinner/frame-0.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 8257,
+          "bbox": [
+            16,
+            12,
+            119,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "6faba1124767"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

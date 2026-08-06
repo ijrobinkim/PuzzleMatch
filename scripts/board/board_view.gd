@@ -558,10 +558,9 @@ func _process_cascade_pipeline() -> void:
 				_cell_to_tile[dest_pos] = tile
 				has_move_tweens = true
 
-		for spawn in step["bonuses"]:
-			var tile: Tile = _cell_to_tile.get(spawn["pos"])
-			if tile:
-				tile.setup(spawn["pos"], tile.tile_type, spawn["kind"], CELL_SIZE)
+		# Bonus icon/kind is already applied in section D's _stagger_item_transform
+		# (at the pre-gravity spawn_pos); re-calling tile.setup() here would kill
+		# the fall tween just started above and snap the tile to its rest position.
 
 		if has_move_tweens and max_anim_duration > 0.0:
 			await get_tree().create_timer(max_anim_duration).timeout

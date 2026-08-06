@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "kind": "sprite-gen-request",
+  "engine": "component-row",
+  "character": {
+    "id": "pebble-gem",
+    "description": "Royal Kingdom match-3 tile family: each color is a distinct thematic icon (shield, diamond gem, clover leaf, crown, castle, key) carved from the same glossy rounded stone/toon material and shading style",
+    "base_image": "base-source.png"
+  },
+  "cell": {
+    "shape": "square",
+    "width": 128,
+    "height": 128,
+    "safe_margin_x": 12,
+    "safe_margin_y": 12,
+    "size": 128,
+    "safe_margin": 12
+  },
+  "chroma_key": {
+    "name": "green",
+    "hex": "#00FF00",
+    "rgb": [
+      0,
+      255,
+      0
+    ],
+    "selection": "manual"
+  },
+  "states": {
+    "idle": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "single static rounded pebble/stone gem pose, camera straight-on slight top-down 3/4 angle, no motion, no animation, exactly matches the locked base image identity, shape, outline weight, and shading style"
+    },
+    "red_shield": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky rounded heraldic shield icon carved from the same glossy stone/toon material and shading style as the attached grey base reference (same thick dark outline weight, same glossy top-highlight, same 3-4 band toon shading, same material sheen), shield silhouette with a gently pointed bottom and rounded top corners, warm saturated red stone material (approx RGB 255,77,77) at the same relative lightness positions as the base (lightest highlight near top, mid body red, darker shaded red near the bottom point). Clearly readable as a shield, not a blob."
+    },
+    "blue_diamond": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky faceted diamond-gem icon carved from the same glossy stone/toon material and shading style as the attached grey base reference (same thick dark outline weight, same glossy top-highlight, same 3-4 band toon shading, same material sheen), classic gem silhouette: pointed bottom tip, wide angular shoulders, flat table facet on top, a few large simple facet planes (not tiny sharp shards), saturated sky blue stone material (approx RGB 77,153,255) at the same relative lightness positions as the base (lightest highlight on the top table facet, mid blue on the body facets, darker shaded blue on the lower facets). Clearly readable as a diamond gem."
+    },
+    "green_leaf": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky rounded four-leaf clover / leaf icon carved from the same glossy stone/toon material and shading style as the attached grey base reference (same thick dark outline weight, same glossy top-highlight, same 3-4 band toon shading, same material sheen), clover silhouette with 4 plump rounded lobes meeting at a soft center and a short stem, saturated grass green stone material (approx RGB 77,230,102) at the same relative lightness positions as the base (lightest highlight on the top lobes, mid green on the body, darker shaded green on the underside/stem). Clearly readable as a four-leaf clover."
+    },
+    "yellow_crown": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky rounded royal crown icon carved from the same glossy stone/toon material and shading style as the attached grey base reference (same thick dark outline weight, same glossy top-highlight, same 3-4 band toon shading, same material sheen), simple crown silhouette with a thick rounded base band and 3-5 plump rounded points on top each tipped with a small round bead, saturated golden yellow stone material (approx RGB 255,230,51) at the same relative lightness positions as the base (lightest highlight on the top points, mid yellow on the band, darker shaded yellow on the base underside). Clearly readable as a crown."
+    },
+    "purple_castle": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky rounded toy castle/tower icon carved from the same glossy stone/toon material and shading style as the attached grey base reference (same thick dark outline weight, same glossy top-highlight, same 3-4 band toon shading, same material sheen), simple castle silhouette: a wide rounded tower body with 3-4 plump rounded crenellation bumps along the top edge and a small rounded center spire, saturated purple/magenta stone material (approx RGB 204,77,230) at the same relative lightness positions as the base (lightest highlight on the top crenellations, mid purple on the tower body, darker shaded purple near the base). Clearly readable as a castle tower."
+    },
+    "orange_key": {
+      "frames": 1,
+      "fps": 1,
+      "loop": false,
+      "action": "a chunky rounded ornate key icon carved from the same glossy stone/toon material and shading style as the attached grey base reference (same thick dark outline weight, same glossy top-highlight, same 3-4 band toon shading, same material sheen), key silhouette oriented diagonally or vertically: a plump rounded oval bow (handle loop) at the top connected to a short thick shaft ending in 2-3 simple rounded teeth at the bottom, saturated orange stone material (approx RGB 255,140,51) at the same relative lightness positions as the base (lightest highlight on the bow, mid orange on the shaft, darker shaded orange on the teeth). Clearly readable as a key."
+    }
+  },
+  "style": "match the attached base/anchor reference image EXACTLY: same pixel density (logical pixel block size), same body proportions, same outline weight, same palette, same shading style, same level of detail. Do not restyle, do not change proportions, do not add or remove detail density. Avoid polished illustration, painterly rendering, anime key art, 3D render, vector app-icon polish, glossy lighting, soft gradients, and anti-aliased high-detail edges.",
+  "motion_phase_guides": false,
+  "layout": "taxonomy/v1",
+  "chroma": {
+    "mode": "rgb",
+    "unmix_reach": 4,
+    "spill_max_fraction": 0.005
+  }
+}

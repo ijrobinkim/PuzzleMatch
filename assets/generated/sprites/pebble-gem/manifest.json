@@ -1,0 +1,171 @@
+{
+  "characterId": "pebble-gem",
+  "engine": "component-row",
+  "game_input": "sprite-sheet-alpha.png",
+  "degraded_static_fallback": false,
+  "curation_applied": false,
+  "frame_variant": "pixel",
+  "sprite_sheet_alpha": "sprite-sheet-alpha.png",
+  "sprite_sheet_alpha_report": "sprite-sheet-alpha.report.json",
+  "base_image": "base-source.png",
+  "cell": {
+    "shape": "square",
+    "width": 128,
+    "height": 128,
+    "safe_margin_x": 12,
+    "safe_margin_y": 12,
+    "size": 128,
+    "safe_margin": 12
+  },
+  "chroma_key": {
+    "name": "green",
+    "hex": "#00FF00",
+    "rgb": [
+      0,
+      255,
+      0
+    ],
+    "selection": "manual"
+  },
+  "animation": {
+    "cellWidth": 128,
+    "cellHeight": 128,
+    "columns": 1,
+    "rows": {
+      "idle": {
+        "row": 0,
+        "frames": 1,
+        "fps": 1,
+        "durations_ms": [
+          1000
+        ],
+        "loop": false,
+        "frame_variant": "pixel"
+      },
+      "red": {
+        "row": 1,
+        "frames": 1,
+        "fps": 1,
+        "durations_ms": [
+          1000
+        ],
+        "loop": false,
+        "frame_variant": "pixel"
+      },
+      "blue": {
+        "row": 2,
+        "frames": 1,
+        "fps": 1,
+        "durations_ms": [
+          1000
+        ],
+        "loop": false,
+        "frame_variant": "pixel"
+      },
+      "green": {
+        "row": 3,
+        "frames": 1,
+        "fps": 1,
+        "durations_ms": [
+          1000
+        ],
+        "loop": false,
+        "frame_variant": "pixel"
+      },
+      "yellow": {
+        "row": 4,
+        "frames": 1,
+        "fps": 1,
+        "durations_ms": [
+          1000
+        ],
+        "loop": false,
+        "frame_variant": "pixel"
+      },
+      "purple": {
+        "row": 5,
+        "frames": 1,
+        "fps": 1,
+        "durations_ms": [
+          1000
+        ],
+        "loop": false,
+        "frame_variant": "pixel"
+      },
+      "orange": {
+        "row": 6,
+        "frames": 1,
+        "fps": 1,
+        "durations_ms": [
+          1000
+        ],
+        "loop": false,
+        "frame_variant": "pixel"
+      }
+    }
+  },
+  "frame_layout": {
+    "sheetWidth": 128,
+    "sheetHeight": 896,
+    "cellWidth": 128,
+    "cellHeight": 128,
+    "rows": {
+      "idle": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "red": [
+        {
+          "x": 0,
+          "y": 128,
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "blue": [
+        {
+          "x": 0,
+          "y": 256,
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "green": [
+        {
+          "x": 0,
+          "y": 384,
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "yellow": [
+        {
+          "x": 0,
+          "y": 512,
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "purple": [
+        {
+          "x": 0,
+          "y": 640,
+          "w": 128,
+          "h": 128
+        }
+      ],
+      "orange": [
+        {
+          "x": 0,
+          "y": 768,
+          "w": 128,
+          "h": 128
+        }
+      ]
+    }
+  }
+}
