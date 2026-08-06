@@ -1,6 +1,7 @@
 class_name Tile
 extends Node2D
 
+var visual: Node2D
 var sprite: Sprite2D
 var bonus_overlay: Sprite2D
 
@@ -15,10 +16,12 @@ func stop_animations() -> void:
 		_active_tween = null
 
 func _ensure_nodes() -> void:
+	if visual == null:
+		visual = get_node_or_null("Visual")
 	if sprite == null:
-		sprite = get_node_or_null("Sprite")
+		sprite = get_node_or_null("Visual/Sprite") if visual else get_node_or_null("Sprite")
 	if bonus_overlay == null:
-		bonus_overlay = get_node_or_null("BonusOverlay")
+		bonus_overlay = get_node_or_null("Visual/BonusOverlay") if visual else get_node_or_null("BonusOverlay")
 
 static var _icon_cache: Dictionary = {}
 
@@ -65,10 +68,13 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 		bonus_overlay.vframes = 1
 		bonus_overlay.frame = 0
 		bonus_overlay.centered = true
-		bonus_overlay.position = Vector2(cell_size * 0.5, cell_size * 0.5)
+		bonus_overlay.position = Vector2.ZERO
 	rotation_degrees = 0.0
 	scale = Vector2.ONE
 	modulate = Color.WHITE
+	if visual:
+		visual.scale = Vector2.ONE
+		visual.rotation_degrees = 0.0
 
 	if bonus_overlay == null:
 		return
@@ -100,7 +106,7 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 			bonus_overlay.vframes = 1
 			bonus_overlay.frame = 0
 			bonus_overlay.scale = Vector2(0.80, 0.80)
-			bonus_overlay.position = Vector2(cell_size * 0.5, cell_size * 0.5)
+			bonus_overlay.position = Vector2.ZERO
 		else:
 			if sprite:
 				sprite.visible = true
@@ -126,6 +132,9 @@ func reset() -> void:
 	rotation_degrees = 0.0
 	scale = Vector2.ONE
 	modulate = Color.WHITE
+	if visual:
+		visual.scale = Vector2.ONE
+		visual.rotation_degrees = 0.0
 
 func animate_move_to(target_cell: Vector2i, cell_size: float, duration: float = 0.48) -> Tween:
 	stop_animations()
@@ -144,38 +153,44 @@ func animate_move_to(target_cell: Vector2i, cell_size: float, duration: float = 
 
 func animate_clear(duration: float = 0.35) -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	_spawn_break_particles()
 	if not is_inside_tree():
-		scale = Vector2.ZERO
+		if visual: visual.scale = Vector2.ZERO
 		return null
 	var tween := create_tween()
 	if tween == null:
-		scale = Vector2.ZERO
+		if visual: visual.scale = Vector2.ZERO
 		return null
 	_active_tween = tween
 	tween.set_parallel(true)
-	tween.tween_property(self, "scale", Vector2(1.28, 1.28), duration * 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2(1.28, 1.28), duration * 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "modulate", Color(2.0, 2.0, 2.0, 1.0), duration * 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.chain().tween_property(self, "scale", Vector2.ZERO, duration * 0.65).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	if visual:
+		tween.chain().tween_property(visual, "scale", Vector2.ZERO, duration * 0.65).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tween.tween_property(self, "modulate:a", 0.0, duration * 0.65)
 	return tween
 
 func animate_spawn(duration: float = 0.42) -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	if not is_inside_tree():
-		scale = Vector2.ONE
+		if visual: visual.scale = Vector2.ONE
 		return null
-	scale = Vector2.ZERO
+	if visual: visual.scale = Vector2.ZERO
 	var tween := create_tween()
 	if tween == null:
-		scale = Vector2.ONE
+		if visual: visual.scale = Vector2.ONE
 		return null
 	_active_tween = tween
-	tween.tween_property(self, "scale", Vector2.ONE, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2.ONE, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	return tween
 
 func animate_converge_to(target_cell: Vector2i, cell_size: float, duration: float = 0.32) -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	var target_pos := Vector2(target_cell.x, target_cell.y) * cell_size
 	if not is_inside_tree():
 		position = target_pos
@@ -187,47 +202,53 @@ func animate_converge_to(target_cell: Vector2i, cell_size: float, duration: floa
 	_active_tween = tween
 	tween.set_parallel(true)
 	tween.tween_property(self, "position", target_pos, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(self, "scale", Vector2(0.15, 0.15), duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2(0.15, 0.15), duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_property(self, "modulate:a", 0.2, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	return tween
 
 func animate_gather_target(duration: float = 0.32) -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	if not is_inside_tree():
-		scale = Vector2.ONE
+		if visual: visual.scale = Vector2.ONE
 		return null
 	var tween := create_tween()
 	if tween == null:
-		scale = Vector2.ONE
+		if visual: visual.scale = Vector2.ONE
 		return null
 	_active_tween = tween
-	tween.tween_property(self, "scale", Vector2(0.82, 0.82), duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(self, "scale", Vector2.ONE, duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2(0.82, 0.82), duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_property(visual, "scale", Vector2.ONE, duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	return tween
 
 func animate_item_transform(bonus_kind: String, duration: float = 0.35) -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	_spawn_item_creation_particles(bonus_kind)
 	if not is_inside_tree():
-		scale = Vector2.ONE
+		if visual: visual.scale = Vector2.ONE
 		modulate = Color.WHITE
 		return null
-	scale = Vector2(0.4, 0.4)
+	if visual: visual.scale = Vector2(0.4, 0.4)
 	modulate = Color(1.8, 1.8, 1.8, 1.0)
 	var tween := create_tween()
 	if tween == null:
-		scale = Vector2.ONE
+		if visual: visual.scale = Vector2.ONE
 		modulate = Color.WHITE
 		return null
 	_active_tween = tween
 	tween.set_parallel(true)
-	tween.tween_property(self, "scale", Vector2(1.35, 1.35), duration * 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.chain().tween_property(self, "scale", Vector2.ONE, duration * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2(1.35, 1.35), duration * 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.chain().tween_property(visual, "scale", Vector2.ONE, duration * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(self, "modulate", Color.WHITE, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	return tween
 
 func animate_hint_nudge(dir: Vector2, cell_size: float) -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	if not is_inside_tree():
 		return null
 	var tween := create_tween()
@@ -238,16 +259,19 @@ func animate_hint_nudge(dir: Vector2, cell_size: float) -> Tween:
 	var target_pos := base_pos + dir.normalized() * (cell_size * 0.22)
 	tween.set_parallel(true)
 	tween.tween_property(self, "position", target_pos, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "scale", Vector2(1.15, 1.15), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2(1.15, 1.15), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "modulate", Color(1.6, 1.5, 1.1), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 	tween.chain().tween_property(self, "position", base_pos, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.chain().tween_property(self, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	if visual:
+		tween.chain().tween_property(visual, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	tween.chain().tween_property(self, "modulate", Color.WHITE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	return tween
 
 func animate_hint_pulse() -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	if not is_inside_tree():
 		return null
 	var tween := create_tween()
@@ -255,15 +279,18 @@ func animate_hint_pulse() -> Tween:
 		return null
 	_active_tween = tween
 	tween.set_parallel(true)
-	tween.tween_property(self, "scale", Vector2(1.22, 1.22), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2(1.22, 1.22), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "modulate", Color(1.7, 1.5, 1.1), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-	tween.chain().tween_property(self, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if visual:
+		tween.chain().tween_property(visual, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.chain().tween_property(self, "modulate", Color.WHITE, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	return tween
 
 func animate_hint_match_pulse() -> Tween:
 	stop_animations()
+	_ensure_nodes()
 	if not is_inside_tree():
 		return null
 	var tween := create_tween()
@@ -271,10 +298,12 @@ func animate_hint_match_pulse() -> Tween:
 		return null
 	_active_tween = tween
 	tween.set_parallel(true)
-	tween.tween_property(self, "scale", Vector2(1.08, 1.08), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	if visual:
+		tween.tween_property(visual, "scale", Vector2(1.08, 1.08), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "modulate", Color(1.4, 1.4, 1.4), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-	tween.chain().tween_property(self, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	if visual:
+		tween.chain().tween_property(visual, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	tween.chain().tween_property(self, "modulate", Color.WHITE, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	return tween
 
@@ -288,6 +317,9 @@ func stop_hint(cell_size: float = 128.0) -> void:
 	scale = Vector2.ONE
 	rotation_degrees = 0.0
 	modulate = Color.WHITE
+	if visual:
+		visual.scale = Vector2.ONE
+		visual.rotation_degrees = 0.0
 
 func _spawn_break_particles() -> void:
 	var particles := CPUParticles2D.new()
@@ -303,7 +335,7 @@ func _spawn_break_particles() -> void:
 	particles.scale_amount_min = 4.0
 	particles.scale_amount_max = 8.0
 	particles.color = get_tile_color(tile_type)
-	particles.position = sprite.position + Vector2(64.0, 64.0)
+	particles.position = Vector2(64.0, 64.0)
 
 	add_child(particles)
 	particles.emitting = true
@@ -325,7 +357,7 @@ func _spawn_item_creation_particles(bonus_kind: String) -> void:
 	particles.scale_amount_min = 5.0
 	particles.scale_amount_max = 10.0
 	particles.color = _get_bonus_particle_color(bonus_kind)
-	particles.position = sprite.position + Vector2(64.0, 64.0)
+	particles.position = Vector2(64.0, 64.0)
 
 	add_child(particles)
 	particles.emitting = true
