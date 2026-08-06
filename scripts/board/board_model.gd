@@ -453,7 +453,7 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 						for y in height:
 							step_cleared[Vector2i(cell.x, y)] = true
 							bonuses[cell.x][y] = BONUS_NONE
-					step_rockets.append({"from": cell, "kind": r_kind})
+					step_rockets.append({"from": cell, "kind": r_kind, "already_emitted": true})
 				elif other_bonus == BONUS_SPINNER:
 					var cross_cells: Array[Vector2i] = []
 					for dir in dirs:
@@ -474,6 +474,7 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 						"target": target_cell,
 						"item_kind": BONUS_SPINNER,
 						"impact_area": [target_cell],
+						"already_emitted": true,
 					}
 					step_spinners.append(spinner_event)
 					custom_spinners.append(spinner_event)
@@ -565,20 +566,24 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 		var targets := _pick_random_targets(1, [b])
 		if not targets.is_empty():
 			var t: Vector2i = targets[0]
+			var rocket_kind := bonus_b if is_rocket_b else bonus_a
 			var rocket_area: Array[Vector2i] = []
-			for x in width:
-				var c := Vector2i(x, t.y)
-				if not rocket_area.has(c):
-					rocket_area.append(c)
-			for y in height:
-				var c := Vector2i(t.x, y)
-				if not rocket_area.has(c):
-					rocket_area.append(c)
+			if rocket_kind == BONUS_ROCKET_H:
+				for x in width:
+					var c := Vector2i(x, t.y)
+					if not rocket_area.has(c):
+						rocket_area.append(c)
+			else:
+				for y in height:
+					var c := Vector2i(t.x, y)
+					if not rocket_area.has(c):
+						rocket_area.append(c)
+			
 			custom_spinners.append({
 				"from": b,
 				"cross": cross_cells,
 				"target": t,
-				"item_kind": BONUS_ROCKET_H,
+				"item_kind": rocket_kind,
 				"impact_area": rocket_area
 			})
 	elif (bonus_a == BONUS_SPINNER and bonus_b == BONUS_BOMB) or (bonus_a == BONUS_BOMB and bonus_b == BONUS_SPINNER):
@@ -1108,12 +1113,12 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 
 			var emit_spinners: Array = []
 			for sp in pending_spinners:
-				if not extra_spinners.has(sp):
+				if not sp.get("already_emitted", false):
 					emit_spinners.append(sp)
 
 			var emit_rockets: Array = []
 			for rk in pending_rockets:
-				if not extra_rockets.has(rk):
+				if not rk.get("already_emitted", false):
 					emit_rockets.append(rk)
 
 			cascade_step.emit({
@@ -1140,7 +1145,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 		pending_rockets.clear()
 
 		if not delayed_impacts.is_empty():
-			await Engine.get_main_loop().create_timer(0.48).timeout
+			await Engine.get_main_loop().create_timer(0.70).timeout
 			for sp in delayed_impacts:
 				var area: Array = sp.get("impact_area", [sp.get("target", Vector2i(-1, -1))])
 				for c in area:

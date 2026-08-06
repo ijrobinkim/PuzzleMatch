@@ -6,6 +6,7 @@ var bonus_overlay: Sprite2D
 
 var cell: Vector2i
 var tile_type: int = -1
+var bonus_kind: String = ""
 var _active_tween: Tween
 
 func stop_animations() -> void:
@@ -52,6 +53,7 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 	_ensure_nodes()
 	cell = p_cell
 	tile_type = p_type
+	self.bonus_kind = bonus_kind
 	position = Vector2(cell.x, cell.y) * cell_size
 	if sprite:
 		sprite.frame = max(0, p_type)
@@ -113,6 +115,7 @@ func reset() -> void:
 	stop_animations()
 	_ensure_nodes()
 	tile_type = -1
+	bonus_kind = ""
 	if sprite:
 		sprite.visible = true
 	if bonus_overlay:

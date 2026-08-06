@@ -3,10 +3,8 @@
 ; since the parameters that go here are not all obvious.
 ;
 ; Format:
-;   [section] ; section goes to a separate config file: <config_name>.<extension>
-;
-; It's still a valid Godot config file, however
-; because it's stored in the same way as other config files.
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -30,19 +28,13 @@ SaveManager="*res://scripts/autoloads/save_manager.gd"
 window/size/viewport_width=1080
 window/size/viewport_height=1920
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 window/handheld/orientation="portrait"
 
-[audio]
+[editor_plugins]
 
-buses/default_bus_layout="res://default_bus_layout.tres"
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-textures/canvas_textures/default_texture_filter=1
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/gut/plugin.cfg")

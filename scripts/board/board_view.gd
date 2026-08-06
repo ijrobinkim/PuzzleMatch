@@ -310,6 +310,7 @@ func _process_cascade_pipeline() -> void:
 
 	while not _pending_steps.is_empty():
 		var step: Dictionary = _pending_steps.pop_front()
+		var last_spinner_tween: Tween = null
 
 		for match_info in step["matches"]:
 			EventBus.tiles_matched.emit(match_info["type"], match_info["count"], match_info["position"])
@@ -331,13 +332,24 @@ func _process_cascade_pipeline() -> void:
 
 		var staggered_clears: Array = step.get("staggered_clears", [])
 		if not staggered_clears.is_empty():
+			var electro_center := Vector2i(-1, -1)
+			for tile in _cell_to_tile.values():
+				if is_instance_valid(tile) and tile.bonus_kind == BoardModel.BONUS_ELECTRO_BALL:
+					electro_center = tile.cell
+					break
+
 			var max_delay := 0.0
 			for sc in staggered_clears:
 				var delay := randf_range(0.0, 0.45)
+				if electro_center != Vector2i(-1, -1):
+					var cleared_cells_arr: Array = sc.get("cleared", [])
+					if not cleared_cells_arr.is_empty():
+						var dist := Vector2(electro_center).distance_to(Vector2(cleared_cells_arr[0]))
+						delay = dist * 0.06
 				if delay > max_delay:
 					max_delay = delay
 				_animate_staggered_clear_event(sc, delay)
-			await get_tree().create_timer(0.35 + max_delay).timeout
+			await get_tree().create_timer(0.23 + max_delay).timeout
 		else:
 			var has_gather_tweens := false
 
@@ -370,12 +382,36 @@ func _process_cascade_pipeline() -> void:
 							if delay > max_rocket_delay:
 								max_rocket_delay = delay
 
+			# Find any bomb centers in this step to calculate shockwave delays
+			var bomb_centers: Array[Vector2i] = []
+			for cell in cleared_cells:
+				var tile: Tile = _cell_to_tile.get(cell)
+				if tile and tile.bonus_kind == BoardModel.BONUS_BOMB:
+					bomb_centers.append(cell)
+
+			var bomb_delay_map: Dictionary = {}
+			var max_bomb_delay := 0.0
+			if not bomb_centers.is_empty():
+				for cell in cleared_cells:
+					var min_dist := 999.0
+					for center in bomb_centers:
+						var dist := Vector2(cell).distance_to(Vector2(center))
+						if dist < min_dist:
+							min_dist = dist
+					var delay := min_dist * 0.045
+					bomb_delay_map[cell] = delay
+					if delay > max_bomb_delay:
+						max_bomb_delay = delay
+
 			# A. Normal cleared tiles (not part of item creation gathering or spinner impact area)
 			for cell in cleared_cells:
 				if not converging_cells.has(cell):
 					var tile: Tile = _cell_to_tile.get(cell)
 					if tile:
 						var delay: float = rocket_delay_map.get(cell, 0.0)
+						if delay == 0.0:
+							delay = bomb_delay_map.get(cell, 0.0)
+
 						if delay > 0.0:
 							var t_ref := tile
 							get_tree().create_timer(delay).timeout.connect(func():
@@ -402,15 +438,14 @@ func _process_cascade_pipeline() -> void:
 					has_gather_tweens = true
 
 			if has_gather_tweens:
-				var wait_time: float = maxf(0.35, max_rocket_delay + 0.30)
+				var wait_time: float = maxf(0.23, maxf(max_rocket_delay, max_bomb_delay) + 0.18)
 				await get_tree().create_timer(wait_time).timeout
 
 			# Process Spinner cross flash & pinpoint flying propeller animations
 			var spinners_in_step: Array = step.get("spinners", [])
 			if not spinners_in_step.is_empty():
 				for sp in spinners_in_step:
-					_animate_spinner_event(sp)
-				await get_tree().create_timer(0.48).timeout
+					last_spinner_tween = _animate_spinner_event(sp)
 
 			# Clean up cleared & converged tiles (except spawn_pos and spinner_impact_cells)
 			for cell in cleared_cells:
@@ -440,15 +475,47 @@ func _process_cascade_pipeline() -> void:
 					_cell_to_tile[spawn_pos] = new_tile
 					_stagger_item_transform(new_tile, spawn_pos, model.get_tile_type(spawn_pos), b["kind"], delay)
 
-			var wait_time := 0.35 + max_delay
+			var wait_time := 0.23 + max_delay
 			await get_tree().create_timer(wait_time).timeout
 
 		# Brief pause before gravity fall
-		await get_tree().create_timer(0.08).timeout
+		await get_tree().create_timer(0.01).timeout
 
-		# 3. Smooth Falling & Refill animation (All tiles drop together simultaneously)
-		var move_tween := create_tween().set_parallel(true)
-		var has_move_tweens := false
+		# 3. Smooth Falling & Refill animation (All tiles drop with gravity, stagger and bounce)
+		var max_anim_duration: float = 0.0
+		var has_move_tweens: bool = false
+
+		var animate_tile_drop: Callable = func(tile: Tile, start_grid_y: float, end_grid_y: float, target_pos: Vector2) -> float:
+			tile.stop_animations()
+			var delay: float = (model.height - 1 - start_grid_y) * 0.025
+			var distance: float = abs(end_grid_y - start_grid_y)
+			var fall_duration: float = sqrt(distance) * 0.08 + 0.05
+			var bounce_duration: float = 0.07
+			var recover_duration: float = 0.08
+			var overshoot_y: float = CELL_SIZE * 0.08
+			var squish_scale: Vector2 = Vector2(1.10, 0.90)
+
+			var tween: Tween = create_tween().set_parallel(true)
+			tween.tween_property(tile, "position", target_pos, fall_duration)\
+				.set_trans(Tween.TRANS_QUAD)\
+				.set_ease(Tween.EASE_IN)\
+				.set_delay(delay)
+
+			tween.chain().tween_property(tile, "position", target_pos + Vector2(0, overshoot_y), bounce_duration)\
+				.set_trans(Tween.TRANS_QUAD)\
+				.set_ease(Tween.EASE_OUT)
+			tween.tween_property(tile, "scale", squish_scale, bounce_duration)\
+				.set_trans(Tween.TRANS_QUAD)\
+				.set_ease(Tween.EASE_OUT)
+
+			tween.chain().tween_property(tile, "position", target_pos, recover_duration)\
+				.set_trans(Tween.TRANS_QUAD)\
+				.set_ease(Tween.EASE_OUT)
+			tween.tween_property(tile, "scale", Vector2.ONE, recover_duration)\
+				.set_trans(Tween.TRANS_QUAD)\
+				.set_ease(Tween.EASE_OUT)
+
+			return delay + fall_duration + bounce_duration + recover_duration
 
 		for fall in step["falls"]:
 			var tile: Tile = _cell_to_tile.get(fall["from"])
@@ -456,8 +523,10 @@ func _process_cascade_pipeline() -> void:
 				_cell_to_tile.erase(fall["from"])
 				_cell_to_tile[fall["to"]] = tile
 				tile.cell = fall["to"]
-				var target_pos := Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE
-				move_tween.tween_property(tile, "position", target_pos, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				var target_pos: Vector2 = Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE
+				var anim_time: float = animate_tile_drop.call(tile, float(fall["from"].y), float(fall["to"].y), target_pos)
+				if anim_time > max_anim_duration:
+					max_anim_duration = anim_time
 				has_move_tweens = true
 
 		var refills_by_col: Dictionary = {}
@@ -476,14 +545,16 @@ func _process_cascade_pipeline() -> void:
 			for idx in total_in_col:
 				var refill: Dictionary = col_refills[idx]
 				var dest_pos: Vector2i = refill["pos"]
-				var tile := _get_pooled_tile()
+				var tile: Tile = _get_pooled_tile()
 				tile.setup(dest_pos, refill["type"], "", CELL_SIZE)
 
 				var start_y: float = -1.0 - float(total_in_col - 1 - idx)
 				tile.position = Vector2(dest_pos.x, start_y) * CELL_SIZE
 
-				var target_pos := Vector2(dest_pos.x, dest_pos.y) * CELL_SIZE
-				move_tween.tween_property(tile, "position", target_pos, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				var target_pos: Vector2 = Vector2(dest_pos.x, dest_pos.y) * CELL_SIZE
+				var anim_time: float = animate_tile_drop.call(tile, start_y, float(dest_pos.y), target_pos)
+				if anim_time > max_anim_duration:
+					max_anim_duration = anim_time
 				_cell_to_tile[dest_pos] = tile
 				has_move_tweens = true
 
@@ -492,14 +563,19 @@ func _process_cascade_pipeline() -> void:
 			if tile:
 				tile.setup(spawn["pos"], tile.tile_type, spawn["kind"], CELL_SIZE)
 
-		if has_move_tweens:
-			await move_tween.finished
+		if has_move_tweens and max_anim_duration > 0.0:
+			await get_tree().create_timer(max_anim_duration).timeout
 
 		# We DO NOT sync here anymore because the model might have advanced multiple steps.
 
 		# Pause between cascade steps if cascading continues
 		if not _pending_steps.is_empty():
-			await get_tree().create_timer(0.25).timeout
+			if last_spinner_tween and last_spinner_tween.is_valid():
+				await last_spinner_tween.finished
+				# Await 0.23 seconds to overlap the target tile clear animation with the next step's fall
+				await get_tree().create_timer(0.23).timeout
+			else:
+				await get_tree().create_timer(0.25).timeout
 
 	_is_animating = false
 
@@ -642,41 +718,64 @@ func _run_hint_loop() -> void:
 func _cell_at_position(local_pos: Vector2) -> Vector2i:
 	return Vector2i(int(local_pos.x / CELL_SIZE), int(local_pos.y / CELL_SIZE))
 
-func _animate_spinner_event(sp: Dictionary) -> void:
+func _animate_spinner_event(sp: Dictionary) -> Tween:
 	var from_cell: Vector2i = sp["from"]
 	var target_cell: Vector2i = sp["target"]
 	var item_kind: String = sp.get("item_kind", BoardModel.BONUS_SPINNER)
 
-	var center_pos := Vector2(from_cell.x + 0.5, from_cell.y + 0.5) * CELL_SIZE
-	var target_pos := Vector2(target_cell.x + 0.5, target_cell.y + 0.5) * CELL_SIZE
+	var center_pos: Vector2 = Vector2(from_cell.x + 0.5, from_cell.y + 0.5) * CELL_SIZE
+	var target_pos: Vector2 = Vector2(target_cell.x + 0.5, target_cell.y + 0.5) * CELL_SIZE
+	var distance: float = center_pos.distance_to(target_pos)
 
 	_spawn_cross_flash_particles(center_pos)
 
-	var flying_prop := Sprite2D.new()
-	var icon_path := "res://assets/sprites/board/item_spinner.png"
+	var flying_prop: Sprite2D = Sprite2D.new()
+	var icon_path: String = "res://assets/sprites/board/item_spinner.png"
 	if item_kind == BoardModel.BONUS_BOMB:
 		icon_path = "res://assets/sprites/board/item_bomb.png"
 	elif item_kind == BoardModel.BONUS_ROCKET_H or item_kind == BoardModel.BONUS_ROCKET_V:
 		icon_path = "res://assets/sprites/board/item_rocket_h.png"
 
-	var tex := Tile._get_icon(icon_path)
+	var tex: Texture2D = Tile._get_icon(icon_path)
 	if tex:
 		flying_prop.texture = tex
-	flying_prop.scale = Vector2(0.80, 0.80)
+	flying_prop.scale = Vector2.ZERO
 	flying_prop.position = center_pos
 	flying_prop.z_index = 20
 	add_child(flying_prop)
 
-	var mid_pos := (center_pos + target_pos) * 0.5 + Vector2(0.0, -140.0)
+	# Calculate Bezier control points and flight properties
+	var arc_height: float = max(150.0, distance * 0.25)
+	var flight_dir: Vector2 = (target_pos - center_pos).normalized()
+	var perp: Vector2 = Vector2(-flight_dir.y, flight_dir.x)
+	var mid_pos: Vector2 = (center_pos + target_pos) * 0.5 + Vector2(0.0, -arc_height) + perp * (distance * 0.1)
 
-	var tween := create_tween().set_parallel(true)
-	tween.tween_method(func(t: float):
+	var flight_duration: float = 0.55
+
+	var tween: Tween = create_tween().set_parallel(true)
+	
+	# Wind-up in place (0.15s)
+	tween.tween_property(flying_prop, "scale", Vector2(1.15, 1.15), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(flying_prop, "rotation_degrees", 360.0, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	# Flight phase (runs after wind-up finishes)
+	tween.chain().tween_method(func(t: float):
 		if is_instance_valid(flying_prop):
-			var p := (1.0 - t) * (1.0 - t) * center_pos + 2.0 * (1.0 - t) * t * mid_pos + t * t * target_pos
-			flying_prop.position = p
-			flying_prop.rotation_degrees = t * 720.0
-	, 0.0, 1.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+			var p: Vector2 = (1.0 - t) * (1.0 - t) * center_pos + 2.0 * (1.0 - t) * t * mid_pos + t * t * target_pos
+			var wobble: Vector2 = perp * sin(t * PI * 8.0) * (24.0 * (1.0 - t))
+			flying_prop.position = p + wobble
+	, 0.0, 1.0, flight_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
+	# Spin extremely fast during flight (in parallel with the flight path)
+	tween.tween_property(flying_prop, "rotation_degrees", 360.0 + 1800.0, flight_duration).set_trans(Tween.TRANS_LINEAR)
+
+	# Independent scale tween for altitude effect (wind-up is 0.15s, then flight is 0.55s)
+	var scale_tween: Tween = create_tween()
+	scale_tween.tween_interval(0.15)
+	scale_tween.tween_property(flying_prop, "scale", Vector2(0.75, 0.75), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	scale_tween.tween_property(flying_prop, "scale", Vector2(1.25, 1.25), 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	# Callback on target arrival
 	tween.chain().tween_callback(func():
 		if is_instance_valid(flying_prop):
 			_spawn_hit_spark_particles(target_pos)
@@ -687,7 +786,7 @@ func _animate_spinner_event(sp: Dictionary) -> void:
 				var target_tile: Tile = _cell_to_tile.get(c)
 				if target_tile:
 					_cell_to_tile.erase(c)
-					var tw := target_tile.animate_clear(0.35)
+					var tw: Tween = target_tile.animate_clear(0.35)
 					if tw:
 						tw.chain().tween_callback(func():
 							if is_instance_valid(target_tile):
@@ -699,11 +798,11 @@ func _animate_spinner_event(sp: Dictionary) -> void:
 						target_tile.visible = false
 
 			if item_kind == BoardModel.BONUS_ROCKET_H or item_kind == BoardModel.BONUS_ROCKET_V:
-				_animate_rocket_launch_projectile(target_cell, BoardModel.BONUS_ROCKET_H)
-				_animate_rocket_launch_projectile(target_cell, BoardModel.BONUS_ROCKET_V)
+				_animate_rocket_launch_projectile(target_cell, item_kind)
 			elif item_kind == BoardModel.BONUS_BOMB:
 				_spawn_cross_flash_particles(target_pos)
 	)
+	return tween
 
 func _spawn_cross_flash_particles(center_pos: Vector2) -> void:
 	var dirs := [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]
@@ -775,10 +874,10 @@ func _animate_rocket_launch_projectile(origin: Vector2i, kind: String) -> void:
 		r_sprite.z_index = 25
 		add_child(r_sprite)
 
-		var dist := start_pos.distance_to(end_pos)
-		var duration := dist / 1600.0
+		var dist: float = start_pos.distance_to(end_pos)
+		var duration: float = dist / 2800.0
 
-		var tween := create_tween()
+		var tween: Tween = create_tween()
 		tween.tween_property(r_sprite, "position", end_pos, duration).set_trans(Tween.TRANS_LINEAR)
 		tween.chain().tween_callback(r_sprite.queue_free)
 
