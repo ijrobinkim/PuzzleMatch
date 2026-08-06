@@ -6,6 +6,9 @@
 | TASK-04 | Present design sections | Done | Presented BaseElement architecture and GUT test design (Approved) |
 | TASK-05 | Write design doc | Done | Created and committed docs/plans/2026-08-06-base-element-execution-design.md |
 | TASK-06 | Execute Task 1 (BaseElement TDD) | Done | TDD RED -> GREEN verified, committed `base_element.gd` & `test_base_element.gd` |
+| TASK-07 | Execute Task 2 (LevelData & ElementFactory TDD) | Done | TDD RED -> GREEN verified, committed `element_factory.gd` & `level_data.gd` |
+
+
 
 
 
