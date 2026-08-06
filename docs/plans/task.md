@@ -17,6 +17,9 @@
 | TASK-15 | Execute Task 10 (SteamBombElement Turn Countdown Bomb TDD) | Done | TDD RED -> GREEN verified, committed `steam_bomb_element.gd` & `test_steam_bomb_element.gd` |
 | TASK-16 | Execute Task 11 (DragonBoxElement 2-Layer Moving Nest TDD) | Done | TDD RED -> GREEN verified, committed `dragon_box_element.gd` & `test_dragon_box_element.gd` |
 | TASK-17 | Execute Task 12 (Royal Kingdom Levels 1-5 Resources TDD) | Done | TDD RED -> GREEN verified, committed `level_001.tres` ~ `level_005.tres` & `test_royal_kingdom_levels.gd` |
+| TASK-18 | Execute Task 13 (Element .tscn Files & Interactive Demo TDD) | Done | TDD RED -> GREEN verified, committed 7 element `.tscn` files and `element_test_demo.tscn` |
+
+
 
 
 
