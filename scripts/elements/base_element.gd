@@ -12,20 +12,58 @@ signal element_destroyed(element: BaseElement)
 
 var current_health: int = 1
 var grid_position: Vector2i = Vector2i.ZERO
-var font: Font = ThemeDB.fallback_font
+
+var _bg_rect: ColorRect
+var _icon_label: Label
+var _hp_label: Label
 
 func _ready() -> void:
 	current_health = max_health
-	queue_redraw()
+	_build_visual_nodes()
+	_update_visuals()
+
+func _build_visual_nodes() -> void:
+	if has_node("BG"):
+		_bg_rect = get_node("BG") as ColorRect
+		_icon_label = get_node("Icon") as Label
+		_hp_label = get_node("HP") as Label
+		return
+
+	_bg_rect = ColorRect.new()
+	_bg_rect.name = "BG"
+	_bg_rect.size = Vector2(100, 100)
+	_bg_rect.position = Vector2(-50, -50)
+	_bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_bg_rect)
+
+	_icon_label = Label.new()
+	_icon_label.name = "Icon"
+	_icon_label.size = Vector2(100, 100)
+	_icon_label.position = Vector2(-50, -50)
+	_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_icon_label.add_theme_font_size_override("font_size", 42)
+	add_child(_icon_label)
+
+	_hp_label = Label.new()
+	_hp_label.name = "HP"
+	_hp_label.size = Vector2(40, 30)
+	_hp_label.position = Vector2(10, -45)
+	_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hp_label.add_theme_font_size_override("font_size", 20)
+	_hp_label.add_theme_color_override("font_color", Color.YELLOW)
+	add_child(_hp_label)
 
 func take_damage(amount: int = 1) -> void:
 	current_health -= amount
 	element_damaged.emit(self, current_health)
-	queue_redraw()
+	_update_visuals()
 	
 	if is_inside_tree() and get_tree() != null:
 		var tw := create_tween()
-		tw.tween_property(self, "scale", Vector2(1.2, 1.2), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(self, "scale", Vector2(1.25, 1.25), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tw.tween_property(self, "scale", Vector2.ONE, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	if current_health <= 0:
@@ -35,52 +73,28 @@ func destroy() -> void:
 	element_destroyed.emit(self)
 	queue_free()
 
-func _draw() -> void:
-	var rect := Rect2(-56, -56, 112, 112)
-	var main_color := _get_element_color()
-	var border_color := _get_element_border_color()
-	var icon_text := _get_element_icon()
-
-	# Draw background box
-	draw_rect(rect, main_color, true)
-	draw_rect(rect, border_color, false, 4.0)
-
-	# Draw diagonal cross pattern for obstacles
-	if is_obstacle:
-		draw_line(Vector2(-56, -56), Vector2(56, 56), border_color * 0.7, 2.0)
-		draw_line(Vector2(56, -56), Vector2(-56, 56), border_color * 0.7, 2.0)
-
-	# Draw Icon Emoji Text
-	if font:
-		draw_string(font, Vector2(-20, 14), icon_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 36)
-
-	# Draw Health Badge if max_health > 1
-	if max_health > 1 and font:
-		var badge_rect := Rect2(16, -50, 36, 28)
-		draw_rect(badge_rect, Color(0, 0, 0, 0.75), true)
-		draw_string(font, Vector2(20, -28), str(current_health), HORIZONTAL_ALIGNMENT_CENTER, -1, 18, Color.YELLOW)
+func _update_visuals() -> void:
+	if _bg_rect:
+		_bg_rect.color = _get_element_color()
+	if _icon_label:
+		_icon_label.text = _get_element_icon()
+	if _hp_label:
+		if max_health > 1 and current_health > 0:
+			_hp_label.text = str(current_health)
+			_hp_label.visible = true
+		else:
+			_hp_label.visible = false
 
 func _get_element_color() -> Color:
 	match element_id:
-		"box": return Color(0.65, 0.45, 0.25, 0.95)
-		"snow": return Color(0.75, 0.92, 1.0, 0.65)
-		"ivy": return Color(0.15, 0.55, 0.2, 0.9)
-		"column": return Color(0.5, 0.5, 0.55, 0.95)
-		"birdhouse": return Color(0.8, 0.4, 0.2, 0.95)
-		"steam_bomb": return Color(0.2, 0.2, 0.25, 0.95)
-		"dragon_box": return Color(0.7, 0.2, 0.8, 0.95)
-		_: return Color(0.6, 0.6, 0.6, 0.9)
-
-func _get_element_border_color() -> Color:
-	match element_id:
-		"box": return Color(0.4, 0.25, 0.1)
-		"snow": return Color(0.4, 0.8, 1.0)
-		"ivy": return Color(0.05, 0.35, 0.1)
-		"column": return Color(0.25, 0.25, 0.3)
-		"birdhouse": return Color(0.5, 0.2, 0.05)
-		"steam_bomb": return Color(1.0, 0.3, 0.2)
-		"dragon_box": return Color(1.0, 0.85, 0.2)
-		_: return Color(0.2, 0.2, 0.2)
+		"box": return Color(0.7, 0.45, 0.2)
+		"snow": return Color(0.6, 0.85, 1.0)
+		"ivy": return Color(0.1, 0.6, 0.2)
+		"column": return Color(0.5, 0.5, 0.6)
+		"birdhouse": return Color(0.85, 0.4, 0.15)
+		"steam_bomb": return Color(0.2, 0.2, 0.3)
+		"dragon_box": return Color(0.7, 0.2, 0.8)
+		_: return Color(0.5, 0.5, 0.5)
 
 func _get_element_icon() -> String:
 	match element_id:
@@ -92,4 +106,3 @@ func _get_element_icon() -> String:
 		"steam_bomb": return "💣"
 		"dragon_box": return "🐉"
 		_: return "❓"
-
