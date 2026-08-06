@@ -32,11 +32,13 @@ var height: int
 var tile_type_count: int
 var types: Array = []
 var bonuses: Array = []
+var elements_map: Dictionary = {}
 var moves_remaining: int
 var score: int = 0
 var objective: int
 var is_busy: bool = false
 var _rng := RandomNumberGenerator.new()
+
 
 static func get_color_name(type: int) -> String:
 	match type:
@@ -92,6 +94,45 @@ func get_tile_type(cell: Vector2i) -> int:
 
 func get_bonus_kind(cell: Vector2i) -> String:
 	return bonuses[cell.x][cell.y]
+
+func set_element(cell: Vector2i, element: BaseElement) -> void:
+	if not is_in_bounds(cell):
+		return
+	if element == null:
+		elements_map.erase(cell)
+	else:
+		elements_map[cell] = element
+		element.grid_position = cell
+		if not element.element_destroyed.is_connected(_on_element_destroyed):
+			element.element_destroyed.connect(_on_element_destroyed)
+
+func get_element(cell: Vector2i) -> BaseElement:
+	if elements_map.has(cell):
+		return elements_map[cell] as BaseElement
+	return null
+
+func _on_element_destroyed(element: BaseElement) -> void:
+	for cell in elements_map.keys():
+		if elements_map[cell] == element:
+			elements_map.erase(cell)
+			break
+
+func damage_adjacent_elements(cleared_cells: Array) -> void:
+	var damaged_targets: Dictionary = {}
+	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+	
+	for cell_val in cleared_cells:
+		var cell: Vector2i = cell_val
+		for d in dirs:
+			var neighbor = cell + d
+			if is_in_bounds(neighbor) and elements_map.has(neighbor):
+				var elem: BaseElement = elements_map[neighbor]
+				if elem != null and not damaged_targets.has(elem):
+					damaged_targets[elem] = true
+	
+	for elem in damaged_targets.keys():
+		(elem as BaseElement).take_damage(1)
+
 
 func _get_effective_type(x: int, y: int) -> int:
 	if bonuses[x][y] != BONUS_NONE:
