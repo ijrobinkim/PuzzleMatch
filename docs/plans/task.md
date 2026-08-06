@@ -7,6 +7,11 @@
 | TASK-05 | Write design doc | Done | Created and committed docs/plans/2026-08-06-base-element-execution-design.md |
 | TASK-06 | Execute Task 1 (BaseElement TDD) | Done | TDD RED -> GREEN verified, committed `base_element.gd` & `test_base_element.gd` |
 | TASK-07 | Execute Task 2 (LevelData & ElementFactory TDD) | Done | TDD RED -> GREEN verified, committed `element_factory.gd` & `level_data.gd` |
+| TASK-08 | Execute Task 3 (LayeredElement TDD) | Done | TDD RED -> GREEN verified, committed `layered_element.gd` & `test_layered_element.gd` |
+| TASK-09 | Execute Task 4 (SpreaderElement TDD) | Done | TDD RED -> GREEN verified, committed `spreader_element.gd` & `test_spreader_element.gd` |
+
+
+
 
 
 
