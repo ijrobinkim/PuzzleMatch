@@ -1,3 +1,4 @@
+# res://scripts/resources/level_data.gd
 class_name LevelData
 extends Resource
 
@@ -7,3 +8,7 @@ extends Resource
 @export var tile_type_count: int = 6
 @export var move_limit: int = 20
 @export var objective: int = 1000
+
+# Royal Kingdom Level Extension
+@export var target_objectives: Dictionary = {}
+@export var initial_elements: Array = []
