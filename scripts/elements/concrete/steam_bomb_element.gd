@@ -18,9 +18,10 @@ func on_turn_passed() -> void:
 		return
 	turns_remaining -= 1
 	countdown_updated.emit(self, turns_remaining)
-	queue_redraw()
+	_update_visuals()
 	if turns_remaining <= 0:
 		explode()
+
 
 func explode() -> void:
 	bomb_exploded.emit(self)

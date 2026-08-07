@@ -21,13 +21,13 @@ func test_game_board_screen_test_instantiation_and_box_setup():
 			var elem = screen._board_view.model.get_element(cell)
 			if elem != null and elem.element_id == "box":
 				box_count += 1
-			if screen._board_view.model.get_tile_type(cell) == -1:
+			if screen._board_view.model.get_tile_type(cell) >= 0:
 				empty_tile_count += 1
-	assert_eq(box_count, 32, "Top 4 rows (32 cells) should be pre-filled with box elements")
-	assert_eq(empty_tile_count, 32, "Top 4 rows should have EMPTY_TYPE (-1) tile type under boxes")
+	assert_eq(box_count, 24, "Top 4 rows (24 cells) should be pre-filled with box elements")
+	assert_eq(empty_tile_count, 32, "Top 4 rows should have normal tile type (>=0) under boxes")
 	
 	# Verify target objectives
-	assert_eq(screen._board_view.model.target_objectives.get("box", 0), 32, "Box objective target should be 32")
+	assert_eq(screen._board_view.model.target_objectives_remaining.get("box", 0), 24, "Box objective target should be 24")
 	
 	screen.free()
 

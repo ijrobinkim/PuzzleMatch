@@ -77,3 +77,126 @@ func test_triggering_a_striped_tile_clears_its_row():
 	assert_eq(board.get_tile_type(Vector2i(1, 1)), 4)
 	assert_eq(board.get_tile_type(Vector2i(2, 1)), 3)
 	assert_eq(board.get_tile_type(Vector2i(3, 1)), 2)
+
+func test_diagonal_gravity_falls_around_obstacle():
+	var board := _flat_board(3, 3, [
+		[0, 1, 2],
+		[3, BoardModel.EMPTY_TYPE, 4],
+		[5, BoardModel.EMPTY_TYPE, 6]
+	])
+	var box = BoxElement.new()
+	box.grid_position = Vector2i(1, 1)
+	board.set_element(Vector2i(1, 1), box)
+	
+	# Assert initial setup
+	assert_eq(board.get_tile_type(Vector2i(1, 2)), BoardModel.EMPTY_TYPE)
+	
+	# Apply gravity
+	var _falls = board._apply_gravity([])
+	
+	# One of (0, 1) or (2, 1) should have fallen to (1, 2)
+	var final_tile_at_dst = board.get_tile_type(Vector2i(1, 2))
+	assert_true(final_tile_at_dst == 3 or final_tile_at_dst == 4)
+
+func test_ddd2_gravity_state():
+	var board = BoardModel.new(_make_level(8, 8, 5, 20), 42)
+	# Clear the board types
+	for x in 8:
+		for y in 8:
+			board.types[x][y] = BoardModel.EMPTY_TYPE
+			board.bonuses[x][y] = BoardModel.BONUS_NONE
+	
+	# Set up boxes as shown in ddd2.PNG
+	var box_positions = [
+		Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(5, 0), Vector2i(6, 0), Vector2i(7, 0),
+		Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1),                 Vector2i(6, 1), Vector2i(7, 1),
+		Vector2i(0, 2), Vector2i(1, 2),                                 Vector2i(6, 2), Vector2i(7, 2),
+		Vector2i(0, 3),                                                 Vector2i(6, 3), Vector2i(7, 3),
+	]
+	for pos in box_positions:
+		var box = BoxElement.new()
+		box.grid_position = pos
+		board.set_element(pos, box)
+		board.types[pos.x][pos.y] = BoardModel.EMPTY_TYPE
+	
+	# Set up the other tiles
+	var layout = [
+		[-1, -1, -1,  0,  1, -1, -1, -1], # Row 0
+		[-1, -1, -1,  2,  0, -1, -1, -1], # Row 1 (Col 5 is empty)
+		[-1, -1, -1,  3,  1, -1, -1, -1], # Row 2 (Col 2 is empty)
+		[-1, -1, -1,  1,  4, -1, -1, -1], # Row 3 (Col 1, 2, 5 are empty)
+		[-1, -1, -1,  0,  0, -1, -1, -1], # Row 4 (Col 0, 1, 2, 5, 6, 7 are empty)
+		[ 0, -1,  1,  3,  3, -1,  1,  4], # Row 5 (Col 1, 5 are empty)
+		[ 1,  3,  2,  2,  2, -1,  2,  4], # Row 6 (Col 5 is empty)
+		[ 4,  0,  0,  3,  1,  3,  2,  1]  # Row 7
+	]
+	
+	for y in 8:
+		for x in 8:
+			var val = layout[y][x]
+			if val != -1:
+				board.types[x][y] = val
+	
+	# Run gravity!
+	var falls = board._apply_gravity([])
+	
+	# Assert that empty cells under/beside boxes got filled or moved
+	assert_true(falls.size() > 0)
+
+func test_ddd2_cascade_fully_fills_board():
+	var board = BoardModel.new(_make_level(8, 8, 5, 20), 42)
+	# Clear the board types
+	for x in 8:
+		for y in 8:
+			board.types[x][y] = BoardModel.EMPTY_TYPE
+			board.bonuses[x][y] = BoardModel.BONUS_NONE
+	
+	# Set up boxes as shown in ddd2.PNG
+	var box_positions = [
+		Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(5, 0), Vector2i(6, 0), Vector2i(7, 0),
+		Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1),                 Vector2i(6, 1), Vector2i(7, 1),
+		Vector2i(0, 2), Vector2i(1, 2),                                 Vector2i(6, 2), Vector2i(7, 2),
+		Vector2i(0, 3),                                                 Vector2i(6, 3), Vector2i(7, 3),
+	]
+	for pos in box_positions:
+		var box = BoxElement.new()
+		box.grid_position = pos
+		board.set_element(pos, box)
+		board.types[pos.x][pos.y] = BoardModel.EMPTY_TYPE
+	
+	# Set up the other tiles
+	var layout = [
+		[-1, -1, -1,  0,  1, -1, -1, -1], # Row 0
+		[-1, -1, -1,  2,  0, -1, -1, -1], # Row 1
+		[-1, -1, -1,  3,  1, -1, -1, -1], # Row 2
+		[-1, -1, -1,  1,  4, -1, -1, -1], # Row 3
+		[-1, -1, -1,  0,  0, -1, -1, -1], # Row 4
+		[ 0, -1,  1,  3,  3, -1,  1,  4], # Row 5
+		[ 1,  3,  2,  2,  2, -1,  2,  4], # Row 6
+		[ 4,  0,  0,  3,  1,  3,  2,  1]  # Row 7
+	]
+	
+	for y in 8:
+		for x in 8:
+			var val = layout[y][x]
+			if val != -1:
+				board.types[x][y] = val
+	
+	# Start cascade using a dummy match cell so that the cascade logic executes
+	await board._do_attempt_swap_cascade(Vector2i(-1, -1), Vector2i(3, 4))
+	
+	# Verify that the board is completely filled (except where boxes are present)
+	for x in 8:
+		for y in 8:
+			var cell = Vector2i(x, y)
+			var type = board.get_tile_type(cell)
+			var has_obstacle = board.elements_map.has(cell) and board.elements_map[cell].is_obstacle
+			if cell == Vector2i(7, 4):
+				assert_eq(type, BoardModel.EMPTY_TYPE, "Cell (7,4) is isolated and must be empty")
+			elif has_obstacle:
+				assert_eq(type, BoardModel.EMPTY_TYPE, "Obstacle cell (%d,%d) has non-empty type %d" % [x, y, type])
+			else:
+				assert_ne(type, BoardModel.EMPTY_TYPE, "Normal cell (%d,%d) should not be empty" % [x, y])
+
+
+

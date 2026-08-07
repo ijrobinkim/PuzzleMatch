@@ -85,13 +85,27 @@ class HintOutlineDrawer extends Node2D:
 		for seg in segments:
 			draw_line(seg[0], seg[1], line_color, line_width, true)
 
+func _cleanup_board() -> void:
+	for tile in _cell_to_tile.values():
+		if is_instance_valid(tile):
+			tile.reset()
+			tile.visible = false
+	_cell_to_tile.clear()
+
+	for elem in _element_nodes.values():
+		if is_instance_valid(elem):
+			elem.queue_free()
+	_element_nodes.clear()
+
 func setup(board_model: BoardModel, level_data: LevelData) -> void:
+	_cleanup_board()
 	model = board_model
 	_bind_model_signals(level_data)
 	EventBus.level_started.emit(level_data.level_id)
 	_render_initial_board()
 
 func start_level(level_data: LevelData) -> void:
+	_cleanup_board()
 	model = BoardModel.new(level_data)
 	_bind_model_signals(level_data)
 	EventBus.level_started.emit(level_data.level_id)
@@ -131,7 +145,10 @@ func _render_elements() -> void:
 			if not elem.get_parent():
 				add_child(elem)
 			elem.position = Vector2(cell.x + 0.5, cell.y + 0.5) * CELL_SIZE
-			elem.z_index = 10
+			if not elem.is_obstacle and elem.element_id != "ivy":
+				elem.z_index = 1
+			else:
+				elem.z_index = 10
 			_element_nodes[cell] = elem
 
 
@@ -163,9 +180,11 @@ func _get_pooled_tile() -> Tile:
 		if not tile.visible:
 			tile.reset()
 			tile.visible = true
+			tile.z_index = 5
 			return tile
 	var tile: Tile = TILE_SCENE.instantiate()
 	add_child(tile)
+	tile.z_index = 5
 	_tile_pool.append(tile)
 	return tile
 
@@ -173,6 +192,8 @@ func _perform_user_swap(a: Vector2i, b: Vector2i) -> void:
 	if _is_animating or model == null or model.is_busy:
 		return
 	if not model.is_in_bounds(a) or not model.is_in_bounds(b):
+		return
+	if not model._can_swap_cell(a) or not model._can_swap_cell(b):
 		return
 
 	_is_animating = true
@@ -267,6 +288,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var pos: Vector2 = event.position if event is InputEventScreenTouch else (event as InputEventMouseButton).position
 		var cell := _cell_at_position(to_local(pos))
 		if not model.is_in_bounds(cell):
+			return
+		if not model._can_swap_cell(cell):
 			return
 		_cancel_hint_timers()
 		if pressed:
@@ -518,8 +541,9 @@ func _process_cascade_pipeline() -> void:
 		var max_anim_duration: float = 0.0
 		var has_move_tweens: bool = false
 
-		var animate_tile_drop: Callable = func(tile: Tile, start_grid_y: float, end_grid_y: float, target_pos: Vector2) -> float:
-			tile.stop_animations()
+		var animate_tile_drop: Callable = func(tile: Node2D, start_grid_y: float, end_grid_y: float, target_pos: Vector2) -> float:
+			if tile.has_method("stop_animations"):
+				tile.stop_animations()
 			var delay: float = (model.height - 1 - start_grid_y) * 0.025
 			var distance: float = abs(end_grid_y - start_grid_y)
 			var fall_duration: float = sqrt(distance) * 0.08 + 0.05
@@ -551,13 +575,31 @@ func _process_cascade_pipeline() -> void:
 			return delay + fall_duration + bounce_duration + recover_duration
 
 		for fall in step["falls"]:
-			var tile: Tile = _cell_to_tile.get(fall["from"])
-			if tile:
-				_cell_to_tile.erase(fall["from"])
-				_cell_to_tile[fall["to"]] = tile
-				tile.cell = fall["to"]
-				var target_pos: Vector2 = Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE
-				var anim_time: float = animate_tile_drop.call(tile, float(fall["from"].y), float(fall["to"].y), target_pos)
+			# Check if this fall is driven by a gimmick element (e.g. a column sliding down).
+			# If so, do NOT move the gem tile — only animate the gimmick node.
+			# Moving an invisible EMPTY_TYPE tile from a column cell corrupts _cell_to_tile
+			# and causes refill tiles to go missing or appear blank.
+			var elem = _element_nodes.get(fall["from"])
+			var is_gimmick_fall := elem != null and is_instance_valid(elem)
+			
+			if not is_gimmick_fall:
+				var tile: Tile = _cell_to_tile.get(fall["from"])
+				if tile:
+					_cell_to_tile.erase(fall["from"])
+					_cell_to_tile[fall["to"]] = tile
+					tile.cell = fall["to"]
+					var target_pos: Vector2 = Vector2(fall["to"].x, fall["to"].y) * CELL_SIZE
+					var anim_time: float = animate_tile_drop.call(tile, float(fall["from"].y), float(fall["to"].y), target_pos)
+					if anim_time > max_anim_duration:
+						max_anim_duration = anim_time
+					has_move_tweens = true
+			
+			# Fall animation for active Gimmick elements (e.g. Columns falling down)
+			if is_gimmick_fall:
+				_element_nodes.erase(fall["from"])
+				_element_nodes[fall["to"]] = elem
+				var target_pos: Vector2 = Vector2(fall["to"].x + 0.5, fall["to"].y + 0.5) * CELL_SIZE
+				var anim_time: float = animate_tile_drop.call(elem, float(fall["from"].y) + 0.5, float(fall["to"].y) + 0.5, target_pos)
 				if anim_time > max_anim_duration:
 					max_anim_duration = anim_time
 				has_move_tweens = true
@@ -619,6 +661,14 @@ func _process_cascade_pipeline() -> void:
 				var tile := _ensure_tile_at(cell)
 				tile.setup(cell, model.get_tile_type(cell), model.get_bonus_kind(cell), CELL_SIZE)
 				tile.position = Vector2(x, y) * CELL_SIZE
+		
+		# Re-render elements to ensure correct visual positions of falling gimmicks
+		_element_nodes.clear()
+		for cell in model.elements_map.keys():
+			var elem = model.elements_map[cell]
+			if elem and is_instance_valid(elem):
+				elem.position = Vector2(cell.x + 0.5, cell.y + 0.5) * CELL_SIZE
+				_element_nodes[cell] = elem
 
 	if not _current_hint_target.is_empty() and not model.is_hint_target_valid(_current_hint_target):
 		_current_hint_target = {}

@@ -22,12 +22,9 @@
 | TASK-20 | Create GameBoardScreenTest Unit Test (TDD RED) | Done | Created failing test in test_game_board_screen_test.gd |
 | TASK-21 | Create GameBoardScreenTest Controller & Scene (TDD GREEN) | Done | Created game_board_screen_test.gd & game_board_screen_test.tscn |
 | TASK-22 | Ensure Box Obstacles Replace Underlying Gem Tiles | Done | Set EMPTY_TYPE tile type for obstacles in BoardModel and hide Tile node in Tile.setup |
-
-
-
-
-
-
+| TASK-23 | Fix Board Interaction, Damage Propagation, and Victory Checks | Done | Fixed method calls in game_board_screen_test, fixed cascade damage, fixed target objectives |
+| TASK-24 | Fix Obstacle Gravity Rules and UI Text Scale | Done | Fixed `_apply_gravity` and `_refill` to block items falling through obstacles; doubled UI label sizes |
+| TASK-25 | Fix diagonal gravity/refill cascade desync | Done | Enabled iterative gravity/refill in cascade loop and protected top-row obstacles from refilling. Verified via GUT tests |
 
 
 

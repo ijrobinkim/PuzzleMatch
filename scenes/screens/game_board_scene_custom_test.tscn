@@ -1,0 +1,98 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/game_board_scene_custom_test.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/board/board_view.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/level_result_overlay.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/ui/game_hud.tscn" id="4"]
+
+[node name="GameBoardSceneCustomTest" type="Node2D"]
+script = ExtResource("1")
+
+[node name="BoardView" parent="." instance=ExtResource("2")]
+
+[node name="GameHUD" parent="." instance=ExtResource("4")]
+
+[node name="LevelResultOverlay" parent="." instance=ExtResource("3")]
+
+[node name="TestControlCanvas" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TestPanel" type="VBoxContainer" parent="TestControlCanvas"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 1260.0
+offset_bottom = 200.0
+theme_override_constants/separation = 8
+
+[node name="ControlsRow" type="HFlowContainer" parent="TestControlCanvas/TestPanel"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 8
+
+[node name="DeployButton" type="Button" parent="TestControlCanvas/TestPanel/ControlsRow"]
+layout_mode = 2
+text = "🏗️ 기믹 배치"
+
+[node name="DamageButton" type="Button" parent="TestControlCanvas/TestPanel/ControlsRow"]
+layout_mode = 2
+text = "💥 전체 기믹 피격"
+
+[node name="TurnButton" type="Button" parent="TestControlCanvas/TestPanel/ControlsRow"]
+layout_mode = 2
+text = "⏳ 1턴 경과"
+
+[node name="SpecialsButton" type="Button" parent="TestControlCanvas/TestPanel/ControlsRow"]
+layout_mode = 2
+text = "💣 특수 아이템 생성"
+
+[node name="RestartButton" type="Button" parent="TestControlCanvas/TestPanel/ControlsRow"]
+layout_mode = 2
+text = "🔄 레벨 리셋"
+
+[node name="CopyLogButton" type="Button" parent="TestControlCanvas/TestPanel/ControlsRow"]
+layout_mode = 2
+text = "📋 보드 상태 복사"
+
+[node name="StatusLabel" type="Label" parent="TestControlCanvas/TestPanel/ControlsRow"]
+layout_mode = 2
+text = "기믹을 선택하고 배치 버튼을 누르세요."
+
+[node name="GimmicksRow" type="HFlowContainer" parent="TestControlCanvas/TestPanel"]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
+
+[node name="BoxCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "📦 상자"
+
+[node name="SnowCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "❄️ 아이스(눈)"
+
+[node name="IvyCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "🌿 덩굴"
+
+[node name="ColumnCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "🏛️ 기둥"
+
+[node name="BirdhouseCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "🐦 새집"
+
+[node name="SteamBombCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "💣 스팀폭탄"
+
+[node name="DragonBoxCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "🐉 드래곤상자"
+
+[connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/DeployButton" to="." method="_on_deploy_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/DamageButton" to="." method="_on_damage_all_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/TurnButton" to="." method="_on_pass_turn_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/SpecialsButton" to="." method="_on_spawn_specials_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/CopyLogButton" to="." method="_on_copy_log_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/RestartButton" to="." method="_on_restart_pressed"]

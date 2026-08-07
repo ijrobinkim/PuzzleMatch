@@ -40,6 +40,66 @@ var target_objectives_remaining: Dictionary = {}
 var is_busy: bool = false
 var _rng := RandomNumberGenerator.new()
 
+# Debug logger history variables
+var initial_types: Array = []
+var initial_bonuses: Array = []
+var initial_elements_list: Array = []
+var action_history: Array = []
+var log_history: Array = []
+
+
+func _init(level_data: LevelData, rng_seed: int = -1) -> void:
+	if rng_seed >= 0:
+		_rng.seed = rng_seed
+	else:
+		_rng.randomize()
+
+	width = level_data.grid_width
+	height = level_data.grid_height
+	tile_type_count = level_data.tile_type_count
+	moves_remaining = level_data.move_limit
+	objective = level_data.objective
+	target_objectives_remaining = level_data.target_objectives.duplicate()
+
+	# 1. Fill default random tiles (reroll until no initial matches)
+	_fill_random_grid()
+	while not find_matches().is_empty():
+		_fill_random_grid()
+
+	# 2. Place predefined elements/gimmicks
+	_load_initial_elements(level_data)
+
+	# 3. Ensure the board has at least one valid move
+	if not has_any_valid_move():
+		reshuffle()
+
+	# 4. Capture initial board state for blackbox logging
+	initial_types = types.duplicate(true)
+	initial_bonuses = bonuses.duplicate(true)
+	if level_data.initial_elements:
+		initial_elements_list = level_data.initial_elements.duplicate(true)
+	else:
+		initial_elements_list = []
+
+	log_event.connect(func(msg: String): log_history.append(msg))
+	swap_committed.connect(func(a: Vector2i, b: Vector2i):
+		action_history.append("[Swap Commit] %s <-> %s" % [str(a), str(b)])
+	)
+
+func _load_initial_elements(level_data: LevelData) -> void:
+	if level_data.initial_elements.is_empty():
+		return
+	var factory := ElementFactory.new()
+	for item in level_data.initial_elements:
+		if item is Dictionary:
+			var cell := Vector2i(item.get("x", 0), item.get("y", 0))
+			if item.has("pos"):
+				cell = Vector2i(item["pos"])
+			var elem_id: String = item.get("id", "")
+			if not elem_id.is_empty():
+				var elem := factory.create_element(elem_id)
+				if elem:
+					set_element(cell, elem)
 
 static func get_color_name(type: int) -> String:
 	match type:
@@ -58,39 +118,6 @@ static func get_bonus_name(kind: String) -> String:
 		BONUS_BOMB: return "💣 폭탄"
 		BONUS_ELECTRO_BALL: return "⚡ 일렉트로 볼"
 		_: return ""
-
-func _init(level_data: LevelData, rng_seed: int = -1) -> void:
-	width = level_data.grid_width
-	height = level_data.grid_height
-	tile_type_count = level_data.tile_type_count
-	moves_remaining = level_data.move_limit
-	objective = level_data.objective
-	target_objectives_remaining = level_data.target_objectives.duplicate()
-	if rng_seed >= 0:
-		_rng.seed = rng_seed
-	else:
-		_rng.randomize()
-	_fill_random_grid()
-	while not find_matches().is_empty():
-		_fill_random_grid()
-	_load_initial_elements(level_data)
-	if not has_any_valid_move():
-		reshuffle()
-
-func _load_initial_elements(level_data: LevelData) -> void:
-	if level_data.initial_elements.is_empty():
-		return
-	var factory := ElementFactory.new()
-	for item in level_data.initial_elements:
-		if item is Dictionary:
-			var cell := Vector2i(item.get("x", 0), item.get("y", 0))
-			if item.has("pos"):
-				cell = Vector2i(item["pos"])
-			var elem_id: String = item.get("id", "")
-			if not elem_id.is_empty():
-				var elem := factory.create_element(elem_id)
-				if elem:
-					set_element(cell, elem)
 
 
 
@@ -123,14 +150,18 @@ func set_element(cell: Vector2i, element: BaseElement) -> void:
 	else:
 		elements_map[cell] = element
 		element.grid_position = cell
-		if element.is_obstacle and not element.allows_falling:
-			types[cell.x][cell.y] = EMPTY_TYPE
 		if not element.element_destroyed.is_connected(_on_element_destroyed):
 			element.element_destroyed.connect(_on_element_destroyed)
+		
+		# If the element is Column, clear any gem block underneath it to make it empty inside.
+		if element.element_id == "column":
+			types[cell.x][cell.y] = EMPTY_TYPE
 
 func get_element(cell: Vector2i) -> BaseElement:
 	if elements_map.has(cell):
-		return elements_map[cell] as BaseElement
+		var elem = elements_map[cell]
+		if is_instance_valid(elem):
+			return elem as BaseElement
 	return null
 
 func _on_element_destroyed(element: BaseElement) -> void:
@@ -140,30 +171,75 @@ func _on_element_destroyed(element: BaseElement) -> void:
 			if target_objectives_remaining[element.element_id] <= 0:
 				target_objectives_remaining.erase(element.element_id)
 
-	for cell in elements_map.keys():
-		if elements_map[cell] == element:
-			elements_map.erase(cell)
-			break
+	if element != null:
+		var pos = element.grid_position
+		if element.element_id == "column":
+			types[pos.x][pos.y] = EMPTY_TYPE
+			
+		if elements_map.has(pos) and (elements_map[pos] == element or not is_instance_valid(elements_map[pos])):
+			elements_map.erase(pos)
+		else:
+			for cell in elements_map.keys():
+				if elements_map[cell] == element or not is_instance_valid(elements_map[cell]):
+					elements_map.erase(cell)
+					break
 
 func is_objective_completed() -> bool:
 	if not target_objectives_remaining.is_empty():
 		return false
-	return score >= objective
+	return true
 
-
-func damage_adjacent_elements(cleared_cells: Array) -> void:
+func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = []) -> void:
 	var damaged_targets: Dictionary = {}
 	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 	
+	# 1. Self damage for all cleared cells
 	for cell_val in cleared_cells:
 		var cell: Vector2i = cell_val
-		for d in dirs:
-			var neighbor = cell + d
-			if is_in_bounds(neighbor) and elements_map.has(neighbor):
-				var elem: BaseElement = elements_map[neighbor]
-				if elem != null and not damaged_targets.has(elem):
-					damaged_targets[elem] = true
+		if elements_map.has(cell):
+			var elem: BaseElement = elements_map[cell]
+			if elem != null:
+				var is_normal_match = normal_match_cells.has(cell)
+				if (not is_normal_match) or elem.allows_self_damage:
+					if not damaged_targets.has(elem):
+						damaged_targets[elem] = "item" if not is_normal_match else "normal"
+				
+	# 2. Adjacent damage propagation from normal matching cells only
+	var adjacent_sources = normal_match_cells
+	if adjacent_sources.is_empty():
+		adjacent_sources = cleared_cells
+		
+	for cell_val in adjacent_sources:
+		var cell: Vector2i = cell_val
+		var is_ivy_source = elements_map.has(cell) and elements_map[cell].element_id == "ivy"
+		
+		if not is_ivy_source:
+			for d in dirs:
+				var neighbor = cell + d
+				if is_in_bounds(neighbor) and elements_map.has(neighbor):
+					var elem: BaseElement = elements_map[neighbor]
+					if elem != null and elem.allows_adjacent_damage and not cleared_cells.has(neighbor):
+						if not damaged_targets.has(elem):
+							damaged_targets[elem] = "normal"
 	
+	# Filter columns: If it is normal match damage ("normal"), only allow at most ONE column element
+	# in the entire board to take damage. We pick the one with the maximum y coordinate (lowest segment).
+	# This ensures only one column segment breaks per match across the whole board.
+	var lowest_column: BaseElement = null
+	for elem in damaged_targets.keys():
+		if elem.element_id == "column" and damaged_targets[elem] == "normal":
+			if lowest_column == null or elem.grid_position.y > lowest_column.grid_position.y:
+				lowest_column = elem
+
+	var columns_to_remove: Array = []
+	for elem in damaged_targets.keys():
+		if elem.element_id == "column" and damaged_targets[elem] == "normal":
+			if elem != lowest_column:
+				columns_to_remove.append(elem)
+
+	for elem in columns_to_remove:
+		damaged_targets.erase(elem)
+
 	for elem in damaged_targets.keys():
 		(elem as BaseElement).take_damage(1)
 
@@ -329,12 +405,24 @@ func find_matches(swap_target: Vector2i = Vector2i(-1, -1)) -> Array:
 
 	return matches
 
+func _can_swap_cell(cell: Vector2i) -> bool:
+	if not is_in_bounds(cell):
+		return false
+	if elements_map.has(cell):
+		var elem = elements_map[cell]
+		if elem.is_obstacle or elem.element_id == "ivy":
+			return false
+	return true
+
 func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 	if is_busy:
 		return false
 	if not is_in_bounds(a) or not is_in_bounds(b):
 		return false
 	if absi(a.x - b.x) + absi(a.y - b.y) != 1:
+		return false
+
+	if not _can_swap_cell(a) or not _can_swap_cell(b):
 		return false
 
 	var bonus_a: String = bonuses[a.x][a.y]
@@ -400,6 +488,7 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 	return true
 
 func _do_activate_special_tile(cell: Vector2i) -> void:
+	action_history.append("[Tap Commit] Activated special item at %s" % str(cell))
 	is_busy = true
 	var cleared: Dictionary = {}
 	cleared[cell] = true
@@ -829,35 +918,111 @@ func _pick_random_targets(count: int, exclude: Array) -> Array:
 	all_candidates.shuffle()
 	return all_candidates.slice(0, count)
 
+func _is_column_blocked_above(x: int, y: int) -> bool:
+	for check_y in range(y - 1, -1, -1):
+		var check_cell := Vector2i(x, check_y)
+		if elements_map.has(check_cell) and is_instance_valid(elements_map[check_cell]) and not elements_map[check_cell].allows_falling:
+			return true
+	return false
+
 func _apply_gravity(cleared_cells: Array) -> Array:
-	var falls: Array = []
 	for cell in cleared_cells:
 		types[cell.x][cell.y] = EMPTY_TYPE
 		bonuses[cell.x][cell.y] = BONUS_NONE
-	for x in width:
-		var write_y := height - 1
-		for y in range(height - 1, -1, -1):
-			if types[x][y] == EMPTY_TYPE:
-				continue
-			if write_y != y:
-				types[x][write_y] = types[x][y]
-				bonuses[x][write_y] = bonuses[x][y]
-				falls.append({"from": Vector2i(x, y), "to": Vector2i(x, write_y)})
-			write_y -= 1
-		for empty_y in range(write_y, -1, -1):
-			types[x][empty_y] = EMPTY_TYPE
-			bonuses[x][empty_y] = BONUS_NONE
-	return falls
+
+	var final_falls: Dictionary = {}
+	var moved := true
+	while moved:
+		moved = false
+		for y in range(height - 1, 0, -1):
+			for x in width:
+				var dst := Vector2i(x, y)
+				if types[dst.x][dst.y] != EMPTY_TYPE:
+					continue
+				if elements_map.has(dst) and is_instance_valid(elements_map[dst]) and not elements_map[dst].allows_falling:
+					continue
+					
+				# 1. Column gimmick falling collapse
+				var up := Vector2i(x, y - 1)
+				var up_elem = elements_map.get(up)
+				if up_elem and is_instance_valid(up_elem) and up_elem.element_id == "column":
+					elements_map.erase(up)
+					elements_map[dst] = up_elem
+					up_elem.grid_position = dst
+					types[dst.x][dst.y] = EMPTY_TYPE
+					types[up.x][up.y] = EMPTY_TYPE
+					
+					var original_from = up
+					for k in final_falls.keys():
+						if final_falls[k] == up:
+							original_from = k
+							break
+					final_falls[original_from] = dst
+					moved = true
+					continue
+					
+				# 2. Straight down
+				var up_blocked = elements_map.has(up) and is_instance_valid(elements_map[up]) and not elements_map[up].allows_falling
+				if not up_blocked and types[up.x][up.y] != EMPTY_TYPE:
+					_move_tile_internal(up, dst, final_falls)
+					moved = true
+					continue
+					
+				# 2. Diagonal falls
+				if _is_column_blocked_above(x, y):
+					var diags := []
+					if _rng.randi() % 2 == 0:
+						if x > 0: diags.append(Vector2i(x - 1, y - 1))
+						if x < width - 1: diags.append(Vector2i(x + 1, y - 1))
+					else:
+						if x < width - 1: diags.append(Vector2i(x + 1, y - 1))
+						if x > 0: diags.append(Vector2i(x - 1, y - 1))
+						
+					for diag in diags:
+						# Skip if the diag source cell is occupied by a static gimmick
+						if elements_map.has(diag) and is_instance_valid(elements_map[diag]) and not elements_map[diag].allows_falling:
+							continue
+						var diag_blocked = elements_map.has(diag) and is_instance_valid(elements_map[diag]) and not elements_map[diag].allows_falling
+						if not diag_blocked and types[diag.x][diag.y] != EMPTY_TYPE:
+							_move_tile_internal(diag, dst, final_falls)
+							moved = true
+							break
+
+	var falls_array: Array = []
+	for k in final_falls.keys():
+		falls_array.append({"from": k, "to": final_falls[k]})
+	return falls_array
+
+func _move_tile_internal(from_cell: Vector2i, to_cell: Vector2i, final_falls: Dictionary) -> void:
+	# Safety guard: never write a gem into a cell occupied by a static gimmick
+	if elements_map.has(to_cell) and is_instance_valid(elements_map[to_cell]) and not elements_map[to_cell].allows_falling:
+		return
+	
+	types[to_cell.x][to_cell.y] = types[from_cell.x][from_cell.y]
+	bonuses[to_cell.x][to_cell.y] = bonuses[from_cell.x][from_cell.y]
+	types[from_cell.x][from_cell.y] = EMPTY_TYPE
+	bonuses[from_cell.x][from_cell.y] = BONUS_NONE
+	
+	var original_from = from_cell
+	for k in final_falls.keys():
+		if final_falls[k] == from_cell:
+			original_from = k
+			break
+	final_falls[original_from] = to_cell
 
 func _refill_empty_cells() -> Array:
 	var refills: Array = []
 	for x in width:
-		for y in height:
+		for y in range(height - 1, -1, -1):
 			if types[x][y] == EMPTY_TYPE:
-				var new_type := _rng.randi() % tile_type_count
-				types[x][y] = new_type
-				bonuses[x][y] = BONUS_NONE
-				refills.append({"pos": Vector2i(x, y), "type": new_type})
+				var cell := Vector2i(x, y)
+				if elements_map.has(cell) and is_instance_valid(elements_map[cell]) and not elements_map[cell].allows_falling:
+					continue
+				if not _is_column_blocked_above(x, y):
+					var new_type := _rng.randi() % tile_type_count
+					types[x][y] = new_type
+					bonuses[x][y] = BONUS_NONE
+					refills.append({"pos": cell, "type": new_type})
 	return refills
 
 func has_any_valid_move() -> bool:
@@ -873,6 +1038,8 @@ func has_any_valid_move() -> bool:
 	return false
 
 func _would_swap_valid(a: Vector2i, b: Vector2i) -> bool:
+	if not _can_swap_cell(a) or not _can_swap_cell(b):
+		return false
 	if bonuses[a.x][a.y] != BONUS_NONE or bonuses[b.x][b.y] != BONUS_NONE:
 		return true
 	_swap_cells(a, b)
@@ -889,154 +1056,138 @@ func get_all_hint_moves() -> Array:
 		for y in height:
 			var cell := Vector2i(x, y)
 			var type_cell: int = types[cell.x][cell.y]
+			if not _can_swap_cell(cell):
+				continue
 
 			if x + 1 < width:
 				var right := Vector2i(x + 1, y)
-				var type_right: int = types[right.x][right.y]
-				_swap_cells(cell, right)
-				var matches := find_matches()
-				_swap_cells(cell, right)
+				if _can_swap_cell(right):
+					var type_right: int = types[right.x][right.y]
+					_swap_cells(cell, right)
+					var matches := find_matches()
+					_swap_cells(cell, right)
+					
+					if not matches.is_empty():
+						var best_m: Dictionary = matches[0]
+						var best_score: int = best_m["cells"].size()
+						for m in matches:
+							var s: int = m["cells"].size()
+							if m.get("bonus_kind", BONUS_NONE) != BONUS_NONE:
+								s += 20
+							if s > best_score:
+								best_score = s
+								best_m = m
 
-				if not matches.is_empty():
-					var best_m: Dictionary = matches[0]
-					var best_score: int = best_m["cells"].size()
-					for m in matches:
-						var s: int = m["cells"].size()
-						if m.get("bonus_kind", BONUS_NONE) != BONUS_NONE:
-							s += 20
-						if s > best_score:
-							best_score = s
-							best_m = m
+						var cell_dict: Dictionary = {}
+						var active_swaps: Dictionary = {}
+						var match_region_dict: Dictionary = {}
+						var match_line_regions: Array = []
 
-					var cell_dict: Dictionary = {}
-					var active_swaps: Dictionary = {}
-					var match_region_dict: Dictionary = {}
-					var match_line_regions: Array = []
+						var m_color: int = best_m.get("color", -1)
+						if type_cell == m_color:
+							active_swaps[cell] = true
+						if type_right == m_color:
+							active_swaps[right] = true
 
-					var m_color: int = best_m.get("color", -1)
-					if type_cell == m_color:
-						active_swaps[cell] = true
-					if type_right == m_color:
-						active_swaps[right] = true
+						var runs: Array = best_m.get("runs", [best_m["cells"]])
+						for run in runs:
+							match_line_regions.append(run.duplicate())
 
-					var runs: Array = best_m.get("runs", [best_m["cells"]])
-					for run in runs:
-						match_line_regions.append(run.duplicate())
+						for c in best_m["cells"]:
+							match_region_dict[c] = true
+							var pre_c: Vector2i = c
+							if c == cell:
+								pre_c = right
+							elif c == right:
+								pre_c = cell
+							cell_dict[pre_c] = true
 
-					for c in best_m["cells"]:
-						match_region_dict[c] = true
-						var pre_c: Vector2i = c
-						if c == cell:
-							pre_c = right
-						elif c == right:
-							pre_c = cell
-						cell_dict[pre_c] = true
+						var bonus_kind: String = best_m.get("bonus_kind", BONUS_NONE)
+						var total_matched: int = match_region_dict.size()
+						var p := 10
+						if bonus_kind == BONUS_ROCKET_H or bonus_kind == BONUS_ROCKET_V or bonus_kind == BONUS_BOMB:
+							p = 40
+						elif bonus_kind == BONUS_ELECTRO_BALL:
+							p = 50
+						elif bonus_kind == BONUS_SPINNER:
+							p = 35
+						elif bonus_kind != BONUS_NONE or total_matched == 4:
+							p = 30
 
-					var bonus_kind: String = best_m.get("bonus_kind", BONUS_NONE)
-					var total_matched: int = match_region_dict.size()
-					var p := 10
-					if total_matched >= 10:
-						p = 100
-					elif total_matched == 9:
-						p = 90
-					elif total_matched == 8:
-						p = 80
-					elif total_matched == 7:
-						p = 70
-					elif total_matched == 6:
-						p = 60
-					elif bonus_kind == BONUS_ELECTRO_BALL or total_matched == 5:
-						p = 50
-					elif bonus_kind == BONUS_BOMB:
-						p = 40
-					elif bonus_kind == BONUS_SPINNER:
-						p = 35
-					elif bonus_kind != BONUS_NONE or total_matched == 4:
-						p = 30
-
-					candidates.append({
-						"target_cells": cell_dict.keys(),
-						"match_region_cells": match_region_dict.keys(),
-						"match_line_regions": match_line_regions,
-						"swap_a": cell,
-						"swap_b": right,
-						"active_swap_cells": active_swaps.keys(),
-						"priority": p
-					})
+						candidates.append({
+							"target_cells": cell_dict.keys(),
+							"match_region_cells": match_region_dict.keys(),
+							"match_line_regions": match_line_regions,
+							"swap_a": cell,
+							"swap_b": right,
+							"active_swap_cells": active_swaps.keys(),
+							"priority": p
+						})
 
 			if y + 1 < height:
 				var down := Vector2i(x, y + 1)
-				var type_down: int = types[down.x][down.y]
-				_swap_cells(cell, down)
-				var matches := find_matches()
-				_swap_cells(cell, down)
+				if not (elements_map.has(down) and elements_map[down].is_obstacle):
+					var type_down: int = types[down.x][down.y]
+					_swap_cells(cell, down)
+					var matches := find_matches()
+					_swap_cells(cell, down)
+					
+					if not matches.is_empty():
+						var best_m: Dictionary = matches[0]
+						var best_score: int = best_m["cells"].size()
+						for m in matches:
+							var s: int = m["cells"].size()
+							if m.get("bonus_kind", BONUS_NONE) != BONUS_NONE:
+								s += 20
+							if s > best_score:
+								best_score = s
+								best_m = m
 
-				if not matches.is_empty():
-					var best_m: Dictionary = matches[0]
-					var best_score: int = best_m["cells"].size()
-					for m in matches:
-						var s: int = m["cells"].size()
-						if m.get("bonus_kind", BONUS_NONE) != BONUS_NONE:
-							s += 20
-						if s > best_score:
-							best_score = s
-							best_m = m
+						var cell_dict: Dictionary = {}
+						var active_swaps: Dictionary = {}
+						var match_region_dict: Dictionary = {}
+						var match_line_regions: Array = []
 
-					var cell_dict: Dictionary = {}
-					var active_swaps: Dictionary = {}
-					var match_region_dict: Dictionary = {}
-					var match_line_regions: Array = []
+						var m_color: int = best_m.get("color", -1)
+						if type_cell == m_color:
+							active_swaps[cell] = true
+						if type_down == m_color:
+							active_swaps[down] = true
 
-					var m_color: int = best_m.get("color", -1)
-					if type_cell == m_color:
-						active_swaps[cell] = true
-					if type_down == m_color:
-						active_swaps[down] = true
+						var runs_down: Array = best_m.get("runs", [best_m["cells"]])
+						for run in runs_down:
+							match_line_regions.append(run.duplicate())
 
-					var runs_down: Array = best_m.get("runs", [best_m["cells"]])
-					for run in runs_down:
-						match_line_regions.append(run.duplicate())
+						for c in best_m["cells"]:
+							match_region_dict[c] = true
+							var pre_c: Vector2i = c
+							if c == cell:
+								pre_c = down
+							elif c == down:
+								pre_c = cell
+							cell_dict[pre_c] = true
 
-					for c in best_m["cells"]:
-						match_region_dict[c] = true
-						var pre_c: Vector2i = c
-						if c == cell:
-							pre_c = down
-						elif c == down:
-							pre_c = cell
-						cell_dict[pre_c] = true
+						var bonus_kind: String = best_m.get("bonus_kind", BONUS_NONE)
+						var total_matched: int = match_region_dict.size()
+						var p := 10
+						if bonus_kind == BONUS_ROCKET_H or bonus_kind == BONUS_ROCKET_V or bonus_kind == BONUS_BOMB:
+							p = 40
+						elif bonus_kind == BONUS_ELECTRO_BALL:
+							p = 50
+						elif bonus_kind == BONUS_SPINNER:
+							p = 35
+						elif bonus_kind != BONUS_NONE or total_matched == 4:
+							p = 30
 
-					var bonus_kind: String = best_m.get("bonus_kind", BONUS_NONE)
-					var total_matched: int = match_region_dict.size()
-					var p := 10
-					if total_matched >= 10:
-						p = 100
-					elif total_matched == 9:
-						p = 90
-					elif total_matched == 8:
-						p = 80
-					elif total_matched == 7:
-						p = 70
-					elif total_matched == 6:
-						p = 60
-					elif bonus_kind == BONUS_ELECTRO_BALL or total_matched == 5:
-						p = 50
-					elif bonus_kind == BONUS_BOMB:
-						p = 40
-					elif bonus_kind == BONUS_SPINNER:
-						p = 35
-					elif bonus_kind != BONUS_NONE or total_matched == 4:
-						p = 30
-
-					candidates.append({
-						"target_cells": cell_dict.keys(),
-						"match_region_cells": match_region_dict.keys(),
-						"match_line_regions": match_line_regions,
-						"swap_a": cell,
-						"swap_b": down,
-						"active_swap_cells": active_swaps.keys(),
-						"priority": p
-					})
+						candidates.append({
+							"target_cells": cell_dict.keys(),
+							"match_region_cells": match_region_dict.keys(),
+							"match_line_regions": match_line_regions,
+							"swap_a": cell,
+							"swap_b": down,
+							"active_swap_cells": active_swaps.keys(),
+							"priority": p
+						})
 
 	if candidates.is_empty():
 		return []
@@ -1068,29 +1219,45 @@ func is_hint_target_valid(target: Dictionary) -> bool:
 
 func reshuffle() -> bool:
 	log_event.emit("[보드] 이동 가능한 매치가 없어 판을 섞습니다!")
-	var flat_types: Array = []
+	
+	# 1. Collect only valid active gem cells (exclude columns/obstacles and empty slots)
+	var shuffle_cells: Array[Vector2i] = []
+	var gem_colors: Array[int] = []
 	for x in width:
 		for y in height:
-			flat_types.append(types[x][y])
+			var cell := Vector2i(x, y)
+			var is_obstacle_cell = elements_map.has(cell) and is_instance_valid(elements_map[cell]) and elements_map[cell].is_obstacle
+			var is_empty_cell = types[x][y] == EMPTY_TYPE
+			
+			if not is_obstacle_cell and not is_empty_cell:
+				shuffle_cells.append(cell)
+				gem_colors.append(types[x][y])
+				
+	if shuffle_cells.is_empty():
+		return false
+
 	var attempts := 0
 	while attempts < 100:
-		flat_types.shuffle()
-		var i := 0
-		for x in width:
-			for y in height:
-				types[x][y] = flat_types[i]
-				i += 1
+		gem_colors.shuffle()
+		for idx in shuffle_cells.size():
+			var cell = shuffle_cells[idx]
+			types[cell.x][cell.y] = gem_colors[idx]
+			
 		if find_matches().is_empty() and has_any_valid_move():
 			board_reshuffled.emit()
 			return true
 		attempts += 1
+		
+	# 2. Fallback: Re-fill only the target active slots with new random gem colors
 	var fallback_attempts := 0
 	while fallback_attempts < 1000:
-		_fill_random_grid()
+		for cell in shuffle_cells:
+			types[cell.x][cell.y] = _rng.randi() % tile_type_count
 		if find_matches().is_empty() and has_any_valid_move():
 			board_reshuffled.emit()
 			return true
 		fallback_attempts += 1
+		
 	push_warning("reshuffle() exhausted all attempts without reaching a valid board state")
 	board_reshuffled.emit()
 	return false
@@ -1137,6 +1304,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 		var matches := find_matches(current_swap_target)
 		var match_infos: Array = []
 		var bonus_spawns: Array = []
+		var normal_match_cells: Array = []
 
 		for m in matches:
 			var anchor: Vector2i = m["cells"][0]
@@ -1147,6 +1315,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 			})
 			for cell in m["cells"]:
 				current_cleared[cell] = true
+				normal_match_cells.append(cell)
 			if m["bonus_kind"] != BONUS_NONE:
 				bonus_spawns.append({
 					"pos": m["bonus_pos"],
@@ -1162,6 +1331,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 			current_cleared[current_extra_trigger] = true
 			current_extra_trigger = Vector2i(-1, -1)
 
+		# 1. Expand cleared cells and score if we have matches
 		if not current_cleared.is_empty():
 			var expand_res := _expand_bonus_triggers(current_cleared)
 			current_cleared = expand_res[0]
@@ -1179,19 +1349,41 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 			else:
 				skip_scoring = false
 
-			var cleared_cells: Array = current_cleared.keys()
-			var falls := _apply_gravity(cleared_cells)
-			var refills := _refill_empty_cells()
+		# 2. Run gravity and refill regardless of whether we had matches,
+		# because previous refills might have enabled new diagonal falls.
+		var cleared_cells: Array = current_cleared.keys()
+		if not cleared_cells.is_empty():
+			damage_adjacent_elements(cleared_cells, normal_match_cells)
+			var cleared_strs: Array = []
+			for c in cleared_cells:
+				cleared_strs.append("(%d,%d)" % [c.x, c.y])
+			log_event.emit("[캐스케이드 소거] %d개 셀: %s" % [cleared_cells.size(), ", ".join(cleared_strs)])
+			
+		var falls := _apply_gravity(cleared_cells)
+		if not falls.is_empty():
+			var fall_strs: Array = []
+			for f in falls:
+				fall_strs.append("(%d,%d)→(%d,%d)" % [f["from"].x, f["from"].y, f["to"].x, f["to"].y])
+			log_event.emit("[낙하] %d개: %s" % [falls.size(), ", ".join(fall_strs)])
+		var refills := _refill_empty_cells()
+		if not refills.is_empty():
+			var refill_strs: Array = []
+			for r in refills:
+				refill_strs.append("(%d,%d)=타입%d" % [r["pos"].x, r["pos"].y, r["type"]])
+			log_event.emit("[보충] %d개: %s" % [refills.size(), ", ".join(refill_strs)])
 
-			for spawn in bonus_spawns:
-				var final_pos: Vector2i = spawn["spawn_pos"]
-				for f in falls:
-					if f["from"] == spawn["spawn_pos"]:
-						final_pos = f["to"]
-						break
-				bonuses[final_pos.x][final_pos.y] = spawn["kind"]
-				spawn["pos"] = final_pos
+		# 3. Apply bonus spawning if we have matches
+		for spawn in bonus_spawns:
+			var final_pos: Vector2i = spawn["spawn_pos"]
+			for f in falls:
+				if f["from"] == spawn["spawn_pos"]:
+					final_pos = f["to"]
+					break
+			bonuses[final_pos.x][final_pos.y] = spawn["kind"]
+			spawn["pos"] = final_pos
 
+		# 4. Emit step if there are matches, falls, or refills
+		if not cleared_cells.is_empty() or not falls.is_empty() or not refills.is_empty():
 			var emit_spinners: Array = []
 			for sp in pending_spinners:
 				if not sp.get("already_emitted", false):
@@ -1239,6 +1431,18 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 			
 			has_more_work = true
 	
+	# Board integrity check: log any non-gimmick cell that is still EMPTY_TYPE (bug indicator)
+	var orphan_empties: Array = []
+	for x in width:
+		for y in height:
+			if types[x][y] == EMPTY_TYPE:
+				var cell := Vector2i(x, y)
+				var has_static = elements_map.has(cell) and is_instance_valid(elements_map[cell]) and not elements_map[cell].allows_falling
+				if not has_static:
+					orphan_empties.append("(%d,%d)" % [x, y])
+	if not orphan_empties.is_empty():
+		log_event.emit("[⚠️ 정합성 오류] 기믹 없이 빈 셀 %d개 발견: %s" % [orphan_empties.size(), ", ".join(orphan_empties)])
+
 	if not has_any_valid_move():
 		reshuffle()
 	cascade_finished.emit()

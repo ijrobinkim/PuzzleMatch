@@ -1,0 +1,51 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/game_board_scene_ice_test.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/board/board_view.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/level_result_overlay.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/ui/game_hud.tscn" id="4"]
+
+[node name="GameBoardSceneIceTest" type="Node2D"]
+script = ExtResource("1")
+
+[node name="BoardView" parent="." instance=ExtResource("2")]
+
+[node name="GameHUD" parent="." instance=ExtResource("4")]
+
+[node name="LevelResultOverlay" parent="." instance=ExtResource("3")]
+
+[node name="TestControlCanvas" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TestPanel" type="HBoxContainer" parent="TestControlCanvas"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 1260.0
+offset_bottom = 70.0
+theme_override_constants/separation = 12
+
+[node name="DamageButton" type="Button" parent="TestControlCanvas/TestPanel"]
+layout_mode = 2
+text = "💥 아이스 전체 피격"
+
+[node name="TurnButton" type="Button" parent="TestControlCanvas/TestPanel"]
+layout_mode = 2
+text = "⏳ 1턴 경과"
+
+[node name="SpecialsButton" type="Button" parent="TestControlCanvas/TestPanel"]
+layout_mode = 2
+text = "💣 특수 아이템 생성"
+
+[node name="RestartButton" type="Button" parent="TestControlCanvas/TestPanel"]
+layout_mode = 2
+text = "🔄 레벨 리셋"
+
+[node name="StatusLabel" type="Label" parent="TestControlCanvas/TestPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "아이스 테스트 레벨 준비 중..."
+
+[connection signal="pressed" from="TestControlCanvas/TestPanel/DamageButton" to="." method="_on_damage_ice_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/TurnButton" to="." method="_on_pass_turn_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/SpecialsButton" to="." method="_on_spawn_specials_pressed"]
+[connection signal="pressed" from="TestControlCanvas/TestPanel/RestartButton" to="." method="_on_restart_pressed"]

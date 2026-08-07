@@ -104,7 +104,7 @@ func _add_log_line(text: String, category: String = "") -> void:
 		return
 	var label := Label.new()
 	label.add_theme_font_override("font", KOREAN_FONT)
-	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_font_size_override("font_size", 24)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	if text.begins_with("[에러]") or category == "error":

@@ -9,6 +9,8 @@ signal element_destroyed(element: BaseElement)
 @export var max_health: int = 1
 @export var is_obstacle: bool = true
 @export var allows_falling: bool = false
+@export var allows_adjacent_damage: bool = true
+@export var allows_self_damage: bool = true
 
 var current_health: int = 1
 var grid_position: Vector2i = Vector2i.ZERO
@@ -43,7 +45,7 @@ func _build_visual_nodes() -> void:
 	_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_icon_label.add_theme_font_size_override("font_size", 42)
+	_icon_label.add_theme_font_size_override("font_size", 84)
 	add_child(_icon_label)
 
 	_hp_label = Label.new()
@@ -52,7 +54,7 @@ func _build_visual_nodes() -> void:
 	_hp_label.position = Vector2(10, -45)
 	_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hp_label.add_theme_font_size_override("font_size", 20)
+	_hp_label.add_theme_font_size_override("font_size", 40)
 	_hp_label.add_theme_color_override("font_color", Color.YELLOW)
 	add_child(_hp_label)
 
@@ -61,17 +63,46 @@ func take_damage(amount: int = 1) -> void:
 	element_damaged.emit(self, current_health)
 	_update_visuals()
 	
-	if is_inside_tree() and get_tree() != null:
-		var tw := create_tween()
-		tw.tween_property(self, "scale", Vector2(1.25, 1.25), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tw.tween_property(self, "scale", Vector2.ONE, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	
 	if current_health <= 0:
 		destroy()
+	else:
+		if is_inside_tree() and get_tree() != null:
+			var tw := create_tween()
+			tw.tween_property(self, "scale", Vector2(1.25, 1.25), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.tween_property(self, "scale", Vector2.ONE, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 func destroy() -> void:
 	element_destroyed.emit(self)
+	_spawn_debris()
 	queue_free()
+
+func _spawn_debris() -> void:
+	if not is_inside_tree() or get_parent() == null:
+		return
+	
+	var particles := CPUParticles2D.new()
+	particles.emitting = false
+	particles.one_shot = true
+	particles.explosiveness = 0.8
+	particles.lifetime = 0.5
+	particles.amount = 15
+	particles.spread = 180.0
+	particles.gravity = Vector2(0, 800)
+	particles.initial_velocity_min = 200.0
+	particles.initial_velocity_max = 400.0
+	particles.scale_amount_min = 10.0
+	particles.scale_amount_max = 20.0
+	
+	if _bg_rect:
+		particles.color = _bg_rect.color
+	else:
+		particles.color = Color(0.6, 0.4, 0.2)
+		
+	particles.position = self.position
+	get_parent().add_child(particles)
+	particles.emitting = true
+	
+	get_tree().create_timer(1.0).timeout.connect(particles.queue_free)
 
 func _update_visuals() -> void:
 	if _bg_rect:

@@ -11,6 +11,14 @@ var _bottom_cover: ColorRect
 var _test_level: LevelData
 
 func _ready() -> void:
+	if _status_label:
+		_status_label.add_theme_font_size_override("font_size", 32)
+	
+	var panel = $TestControlCanvas/TestPanel
+	if panel:
+		for child in panel.get_children():
+			if child is Button:
+				child.add_theme_font_size_override("font_size", 32)
 	EventBus.level_completed.connect(func(_id, _stars): _overlay.show_result(true))
 	EventBus.level_failed.connect(func(_id): _overlay.show_result(false))
 	_overlay.restart_requested.connect(func(): GameManager.change_scene("res://scenes/screens/game_board_screen_test.tscn"))
@@ -25,7 +33,7 @@ func _ready() -> void:
 	_setup_covers()
 	_board_view.start_level(_test_level)
 	_center_board()
-	_update_status("상자 반절(32개) 배치 레벨 테스트 준비 완료!")
+	_update_status("상자 반절(24개) 배치 레벨 테스트 준비 완료!")
 
 func _setup_test_level() -> void:
 	_test_level = LevelData.new()
@@ -34,11 +42,13 @@ func _setup_test_level() -> void:
 	_test_level.grid_height = 8
 	_test_level.move_limit = 30
 	_test_level.tile_type_count = 5
-	_test_level.target_objectives = {"box": 32}
+	_test_level.target_objectives = {"box": 24}
 
 	var initial_elems: Array = []
 	for x in 8:
 		for y in 4:
+			if x == 3 or x == 4:
+				continue
 			initial_elems.append({
 				"x": x,
 				"y": y,
@@ -82,14 +92,17 @@ func _on_damage_boxes_pressed() -> void:
 		var damaged_count := 0
 		var active_elems: Array = _board_view.model.elements_map.values().duplicate()
 		for elem in active_elems:
-			if is_instance_valid(elem) and elem.element_id == "box":
-				_board_view.model.damage_element_at(elem.grid_position, 1)
+			if is_instance_valid(elem) and elem.element_id == "box" and elem.current_health > 0:
+				elem.take_damage(1)
 				damaged_count += 1
 		_update_status("전체 상자 %d개에 1 데미지 적용!" % damaged_count)
 
 func _on_pass_turn_pressed() -> void:
 	if _board_view and _board_view.model:
-		_board_view.model._on_turn_passed()
+		var active_elems: Array = _board_view.model.elements_map.values().duplicate()
+		for elem in active_elems:
+			if is_instance_valid(elem) and elem.has_method("on_turn_passed"):
+				elem.on_turn_passed()
 		_update_status("1 턴 경과!")
 
 func _on_restart_pressed() -> void:

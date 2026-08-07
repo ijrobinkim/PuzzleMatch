@@ -27,12 +27,12 @@ func _setup_covers() -> void:
 	
 	_top_cover = ColorRect.new()
 	_top_cover.color = bg_color
-	_top_cover.z_index = 1
+	_top_cover.z_index = 20
 	add_child(_top_cover)
 	
 	_bottom_cover = ColorRect.new()
 	_bottom_cover.color = bg_color
-	_bottom_cover.z_index = 1
+	_bottom_cover.z_index = 20
 	add_child(_bottom_cover)
 	
 	if _board_view:

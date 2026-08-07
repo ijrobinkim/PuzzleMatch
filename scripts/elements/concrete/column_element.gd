@@ -4,6 +4,6 @@ extends "res://scripts/elements/base_element.gd"
 
 func _init() -> void:
 	element_id = "column"
-	max_health = 3
+	max_health = 1
 	is_obstacle = true
 	allows_falling = false
