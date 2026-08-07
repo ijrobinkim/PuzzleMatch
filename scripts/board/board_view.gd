@@ -161,6 +161,19 @@ func _ensure_tile_at(cell: Vector2i) -> Tile:
 	if tile == null or not is_instance_valid(tile):
 		tile = _get_pooled_tile()
 		_cell_to_tile[cell] = tile
+	elif tile.tile_type == -1 and tile.bonus_kind == BoardModel.BONUS_NONE:
+		# Recycle the placeholder tile and use a fresh pooled one to avoid visibility bugs
+		tile.reset()
+		tile.visible = false
+		_cell_to_tile.erase(cell)
+		
+		# Only append to pool if it's not already in there to avoid duplicates
+		if not _tile_pool.has(tile):
+			_tile_pool.append(tile)
+			
+		tile = _get_pooled_tile()
+		_cell_to_tile[cell] = tile
+		
 	return tile
 
 func _render_initial_board() -> void:
