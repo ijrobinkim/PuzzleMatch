@@ -102,12 +102,17 @@ func _load_initial_elements(level_data: LevelData) -> void:
 				var elem := factory.create_element(elem_id)
 				if elem:
 					if elem_id == "trophy_cabinet":
+						elem.grid_position = cell
 						for dx in range(2):
 							for dy in range(2):
 								var c := cell + Vector2i(dx, dy)
 								if is_in_bounds(c):
-									set_element(c, elem)
+									elements_map[c] = elem
 									types[c.x][c.y] = EMPTY_TYPE
+									if not elem.element_destroyed.is_connected(_on_element_destroyed):
+										elem.element_destroyed.connect(_on_element_destroyed)
+									if not elem.element_damaged.is_connected(_on_element_damaged):
+										elem.element_damaged.connect(_on_element_damaged)
 					else:
 						set_element(cell, elem)
 
@@ -165,8 +170,8 @@ func set_element(cell: Vector2i, element: BaseElement) -> void:
 		if not element.element_damaged.is_connected(_on_element_damaged):
 			element.element_damaged.connect(_on_element_damaged)
 		
-		# If the element is Column, clear any gem block underneath it to make it empty inside.
-		if element.element_id == "column":
+		# If the element is an obstacle (Column, TrophyCabinet, Box, etc.), clear gem block underneath it
+		if element.is_obstacle:
 			types[cell.x][cell.y] = EMPTY_TYPE
 
 func get_element(cell: Vector2i) -> BaseElement:
