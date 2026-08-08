@@ -6,6 +6,13 @@ signal animations_finished
 const CELL_SIZE := 128.0
 const TILE_SCENE: PackedScene = preload("res://scenes/board/tile.tscn")
 
+const BOOM_SFX: Array[AudioStream] = [
+	preload("res://assets/sound/sfx/Boom/Boom7.wav"),
+	preload("res://assets/sound/sfx/Boom/Boom9.wav"),
+	preload("res://assets/sound/sfx/Boom/Boom10.wav"),
+	preload("res://assets/sound/sfx/Boom/Boom22.wav"),
+]
+
 var model: BoardModel
 var _tile_pool: Array = []
 var _cell_to_tile: Dictionary = {}
@@ -518,6 +525,7 @@ func _process_cascade_pipeline() -> void:
 				var tile: Tile = _cell_to_tile.get(cell)
 				if tile and tile.bonus_kind == BoardModel.BONUS_BOMB:
 					bomb_centers.append(cell)
+					_play_boom_sfx()
 
 			var bomb_delay_map: Dictionary = {}
 			var max_bomb_delay := 0.0
@@ -1046,7 +1054,11 @@ func _animate_spinner_event(sp: Dictionary) -> Tween:
 	)
 	return tween
 
+func _play_boom_sfx() -> void:
+	AudioManager.play_sfx(BOOM_SFX[randi() % BOOM_SFX.size()], randf_range(0.92, 1.08), randf_range(-3.0, 0.0))
+
 func _spawn_cross_flash_particles(center_pos: Vector2) -> void:
+	_play_boom_sfx()
 	var dirs := [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]
 	for d in dirs:
 		var particles := CPUParticles2D.new()
@@ -1088,6 +1100,7 @@ func _spawn_hit_spark_particles(target_pos: Vector2) -> void:
 	get_tree().create_timer(0.45).timeout.connect(particles.queue_free)
 
 func _animate_rocket_launch_projectile(origin: Vector2i, kind: String) -> void:
+	_play_boom_sfx()
 	var start_pos := Vector2(origin.x + 0.5, origin.y + 0.5) * CELL_SIZE
 	var tex_path := "res://assets/sprites/board/item_rocket_h.png" if kind == BoardModel.BONUS_ROCKET_H else "res://assets/sprites/board/item_rocket_v.png"
 	var tex := Tile._get_icon(tex_path)

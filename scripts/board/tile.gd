@@ -225,6 +225,7 @@ func animate_spawn(duration: float = 0.42) -> Tween:
 func animate_converge_to(target_cell: Vector2i, cell_size: float, duration: float = 0.32) -> Tween:
 	stop_animations()
 	_ensure_nodes()
+	AudioManager.play_sfx(BREAK_SFX[randi() % BREAK_SFX.size()], randf_range(0.92, 1.08), randf_range(-4.0, 0.0))
 	var target_pos := Vector2(target_cell.x, target_cell.y) * cell_size
 	if not is_inside_tree():
 		position = target_pos
