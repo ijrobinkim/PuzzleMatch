@@ -711,7 +711,10 @@ func _process_cascade_pipeline() -> void:
 		for cell in model.elements_map.keys():
 			var elem = model.elements_map[cell]
 			if elem and is_instance_valid(elem):
-				elem.position = Vector2(cell.x + 0.5, cell.y + 0.5) * CELL_SIZE
+				if elem.element_id == "trophy_cabinet":
+					elem.position = Vector2(elem.grid_position.x + 1.0, elem.grid_position.y + 1.0) * CELL_SIZE
+				else:
+					elem.position = Vector2(cell.x + 0.5, cell.y + 0.5) * CELL_SIZE
 				_element_nodes[cell] = elem
 
 	if not _current_hint_target.is_empty() and not model.is_hint_target_valid(_current_hint_target):
