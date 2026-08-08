@@ -469,9 +469,9 @@ func _can_swap_cell(cell: Vector2i) -> bool:
 	return true
 
 func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
-	if is_busy:
-		return false
 	if not is_in_bounds(a) or not is_in_bounds(b):
+		return false
+	if types[a.x][a.y] == EMPTY_TYPE or types[b.x][b.y] == EMPTY_TYPE:
 		return false
 	if absi(a.x - b.x) + absi(a.y - b.y) != 1:
 		return false
@@ -551,7 +551,7 @@ func _do_activate_special_tile(cell: Vector2i) -> void:
 	_check_game_over()
 
 func activate_special_tile(cell: Vector2i) -> bool:
-	if is_busy or not is_in_bounds(cell):
+	if not is_in_bounds(cell) or types[cell.x][cell.y] == EMPTY_TYPE:
 		return false
 	var kind: String = bonuses[cell.x][cell.y]
 	if kind == BONUS_NONE:

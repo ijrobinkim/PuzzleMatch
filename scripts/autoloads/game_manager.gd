@@ -3,7 +3,7 @@ extends Node
 
 var GAME_VERSION: String:
 	get:
-		return ProjectSettings.get_setting("application/config/version", "0.0.1.37")
+		return ProjectSettings.get_setting("application/config/version", "0.0.1.44")
 
 signal scene_changed(scene_path: String)
 signal game_paused(is_paused: bool)

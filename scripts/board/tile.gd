@@ -6,9 +6,15 @@ var sprite: Sprite2D
 var bonus_overlay: Sprite2D
 
 var cell: Vector2i
+var cell_target: Vector2i = Vector2i(-1, -1)
 var tile_type: int = -1
 var bonus_kind: String = ""
+var is_destroying: bool = false
+var is_falling: bool = false
 var _active_tween: Tween
+
+func can_be_swapped() -> bool:
+	return visible and not is_destroying and tile_type != -1
 
 func stop_animations() -> void:
 	if _active_tween and _active_tween.is_valid():
@@ -55,8 +61,11 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 	stop_animations()
 	_ensure_nodes()
 	cell = p_cell
+	cell_target = p_cell
 	tile_type = p_type
 	self.bonus_kind = bonus_kind
+	is_destroying = false
+	is_falling = false
 	position = Vector2(cell.x, cell.y) * cell_size
 
 	if p_type == -1 and bonus_kind == BoardModel.BONUS_NONE:
@@ -131,6 +140,9 @@ func reset() -> void:
 	_ensure_nodes()
 	tile_type = -1
 	bonus_kind = ""
+	is_destroying = false
+	is_falling = false
+	cell_target = Vector2i(-1, -1)
 	if sprite:
 		sprite.visible = true
 	if bonus_overlay:
@@ -148,22 +160,28 @@ func reset() -> void:
 func animate_move_to(target_cell: Vector2i, cell_size: float, duration: float = 0.48) -> Tween:
 	stop_animations()
 	cell = target_cell
+	cell_target = target_cell
+	is_falling = true
 	var target_pos := Vector2(target_cell.x, target_cell.y) * cell_size
 	if not is_inside_tree():
 		position = target_pos
+		is_falling = false
 		return null
 	var tween := create_tween()
 	if tween == null:
 		position = target_pos
+		is_falling = false
 		return null
 	_active_tween = tween
 	tween.tween_property(self, "position", target_pos, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.finished.connect(func(): is_falling = false)
 	return tween
 
 func animate_clear(duration: float = 0.35) -> Tween:
 	stop_animations()
 	_ensure_nodes()
 	_spawn_break_particles()
+	is_destroying = true
 	if not is_inside_tree():
 		if visual: visual.scale = Vector2.ZERO
 		return null

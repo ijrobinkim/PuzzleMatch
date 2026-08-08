@@ -15,6 +15,7 @@ var _drag_start_pos := Vector2.ZERO
 const DRAG_THRESHOLD := 30.0
 
 var _pending_steps: Array = []
+var _pending_user_inputs: Array = []
 var _is_animating: bool = false
 var _active_swap_tween: Tween
 
@@ -205,19 +206,48 @@ func _get_pooled_tile() -> Tile:
 	_tile_pool.append(tile)
 	return tile
 
+func _enqueue_user_input(input_action: Dictionary) -> void:
+	if _pending_user_inputs.size() < 2:
+		_pending_user_inputs.append(input_action)
+
+func _process_pending_user_inputs() -> void:
+	if _pending_user_inputs.is_empty() or _is_animating or model == null or model.is_busy:
+		return
+	var cmd: Dictionary = _pending_user_inputs.pop_front()
+	var type: String = cmd.get("type", "")
+	if type == "swap":
+		var a: Vector2i = cmd.get("from", Vector2i(-1, -1))
+		var b: Vector2i = cmd.get("to", Vector2i(-1, -1))
+		if model.is_in_bounds(a) and model.is_in_bounds(b) and model._can_swap_cell(a) and model._can_swap_cell(b):
+			_perform_user_swap(a, b)
+	elif type == "activate_special":
+		var cell: Vector2i = cmd.get("cell", Vector2i(-1, -1))
+		if model.is_in_bounds(cell) and model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
+			if model.is_busy or _is_animating:
+				_enqueue_user_input(cmd)
+			else:
+				model.activate_special_tile(cell)
+
 func _perform_user_swap(a: Vector2i, b: Vector2i) -> void:
-	if _is_animating or model == null or model.is_busy:
+	if model == null:
 		return
 	if not model.is_in_bounds(a) or not model.is_in_bounds(b):
 		return
 	if not model._can_swap_cell(a) or not model._can_swap_cell(b):
 		return
 
-	_is_animating = true
-	_cancel_hint_timers()
-
 	var tile_a: Tile = _cell_to_tile.get(a)
 	var tile_b: Tile = _cell_to_tile.get(b)
+
+	if tile_a == null or tile_b == null:
+		return
+
+	if tile_a.is_destroying or tile_b.is_destroying:
+		_enqueue_user_input({"type": "swap", "from": a, "to": b})
+		return
+
+	_is_animating = true
+	_cancel_hint_timers()
 
 	if tile_a:
 		tile_a.stop_hint(CELL_SIZE)
@@ -298,7 +328,7 @@ func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 	_cancel_hint_timers()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if model == null or model.is_busy or _is_animating:
+	if model == null:
 		return
 	if event is InputEventScreenTouch or event is InputEventMouseButton:
 		var pressed: bool = event.is_pressed() if event is InputEventScreenTouch else (event as InputEventMouseButton).pressed
@@ -338,16 +368,24 @@ func _handle_release(cell: Vector2i) -> void:
 	if start != cell:
 		_schedule_hint_timer()
 		return
+	var tile: Tile = _cell_to_tile.get(cell)
+	var is_tile_destroying := tile != null and tile.is_destroying
 	if _selected_cell == Vector2i(-1, -1):
 		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
-			model.activate_special_tile(cell)
+			if is_tile_destroying:
+				_enqueue_user_input({"type": "activate_special", "cell": cell})
+			else:
+				model.activate_special_tile(cell)
 		else:
 			_selected_cell = cell
 		_schedule_hint_timer()
 		return
 	if _selected_cell == cell:
 		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
-			model.activate_special_tile(cell)
+			if is_tile_destroying:
+				_enqueue_user_input({"type": "activate_special", "cell": cell})
+			else:
+				model.activate_special_tile(cell)
 		_selected_cell = Vector2i(-1, -1)
 		_schedule_hint_timer()
 		return
@@ -358,7 +396,10 @@ func _handle_release(cell: Vector2i) -> void:
 		_perform_user_swap(sel, cell)
 	else:
 		if model.get_bonus_kind(cell) != BoardModel.BONUS_NONE:
-			model.activate_special_tile(cell)
+			if is_tile_destroying:
+				_enqueue_user_input({"type": "activate_special", "cell": cell})
+			else:
+				model.activate_special_tile(cell)
 			_selected_cell = Vector2i(-1, -1)
 		else:
 			_selected_cell = cell
@@ -751,6 +792,7 @@ func _process_cascade_pipeline() -> void:
 	if not _current_hint_target.is_empty() and not model.is_hint_target_valid(_current_hint_target):
 		_current_hint_target = {}
 	_schedule_hint_timer()
+	_process_pending_user_inputs()
 
 func _schedule_hint_timer() -> void:
 	_cancel_hint_timers()
