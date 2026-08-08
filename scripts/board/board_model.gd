@@ -220,13 +220,13 @@ func _on_element_destroyed(element: BaseElement) -> void:
 		if element.element_id == "column":
 			types[pos.x][pos.y] = EMPTY_TYPE
 			
-		if elements_map.has(pos) and (elements_map[pos] == element or not is_instance_valid(elements_map[pos])):
-			elements_map.erase(pos)
-		else:
-			for cell in elements_map.keys():
-				if elements_map[cell] == element or not is_instance_valid(elements_map[cell]):
-					elements_map.erase(cell)
-					break
+		var keys_to_erase: Array = []
+		for cell in elements_map.keys():
+			var elem = elements_map[cell]
+			if not is_instance_valid(elem) or elem == element:
+				keys_to_erase.append(cell)
+		for cell in keys_to_erase:
+			elements_map.erase(cell)
 
 func is_objective_completed() -> bool:
 	if not target_objectives_remaining.is_empty():
@@ -242,7 +242,7 @@ func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = 
 		var cell: Vector2i = cell_val
 		if elements_map.has(cell):
 			var elem: BaseElement = elements_map[cell]
-			if elem != null:
+			if elem != null and is_instance_valid(elem):
 				var is_normal_match = normal_match_cells.has(cell)
 				if (not is_normal_match) or elem.allows_self_damage:
 					if not damaged_targets.has(elem):
@@ -253,14 +253,14 @@ func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = 
 		
 	for cell_val in adjacent_sources:
 		var cell: Vector2i = cell_val
-		var is_ivy_source = elements_map.has(cell) and elements_map[cell].element_id == "ivy"
+		var is_ivy_source = elements_map.has(cell) and is_instance_valid(elements_map[cell]) and elements_map[cell].element_id == "ivy"
 		
 		if not is_ivy_source:
 			for d in dirs:
 				var neighbor = cell + d
 				if is_in_bounds(neighbor) and elements_map.has(neighbor):
 					var elem: BaseElement = elements_map[neighbor]
-					if elem != null and elem.allows_adjacent_damage and not cleared_cells.has(neighbor):
+					if elem != null and is_instance_valid(elem) and elem.allows_adjacent_damage and not cleared_cells.has(neighbor):
 						if not damaged_targets.has(elem):
 							damaged_targets[elem] = "normal"
 	
@@ -268,13 +268,13 @@ func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = 
 	# in the entire board to take damage. We pick the actual bottom of the pillar.
 	var lowest_column: BaseElement = null
 	for elem in damaged_targets.keys():
-		if elem.element_id == "column" and damaged_targets[elem] == "normal":
+		if is_instance_valid(elem) and elem.element_id == "column" and damaged_targets[elem] == "normal":
 			# Find the actual bottom of this pillar
 			var bottom_elem = elem
 			var check_y = elem.grid_position.y + 1
 			while check_y < height:
 				var down_pos = Vector2i(elem.grid_position.x, check_y)
-				if elements_map.has(down_pos) and elements_map[down_pos].element_id == "column":
+				if elements_map.has(down_pos) and is_instance_valid(elements_map[down_pos]) and elements_map[down_pos].element_id == "column":
 					bottom_elem = elements_map[down_pos]
 					check_y += 1
 				else:
@@ -283,19 +283,19 @@ func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = 
 			if lowest_column == null or bottom_elem.grid_position.y > lowest_column.grid_position.y:
 				lowest_column = bottom_elem
 
-	var columns_to_remove: Array = []
+	var final_targets: Array = []
 	for elem in damaged_targets.keys():
+		if not is_instance_valid(elem):
+			continue
 		if elem.element_id == "column" and damaged_targets[elem] == "normal":
-			columns_to_remove.append(elem)
+			if elem == lowest_column:
+				final_targets.append(elem)
+		else:
+			final_targets.append(elem)
 
-	for elem in columns_to_remove:
-		damaged_targets.erase(elem)
-		
-	if lowest_column != null:
-		damaged_targets[lowest_column] = "normal"
-
-	for elem in damaged_targets.keys():
-		(elem as BaseElement).take_damage(1)
+	for elem in final_targets:
+		if is_instance_valid(elem):
+			(elem as BaseElement).take_damage(1)
 
 
 func _get_effective_type(x: int, y: int) -> int:
@@ -304,7 +304,7 @@ func _get_effective_type(x: int, y: int) -> int:
 	var cell := Vector2i(x, y)
 	if elements_map.has(cell):
 		var elem: BaseElement = elements_map[cell]
-		if elem and elem.is_obstacle:
+		if elem and is_instance_valid(elem) and elem.is_obstacle:
 			return EMPTY_TYPE
 	return types[x][y]
 
