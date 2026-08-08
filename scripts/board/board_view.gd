@@ -189,8 +189,9 @@ func _render_initial_board() -> void:
 
 
 func _get_pooled_tile() -> Tile:
+	var active_tiles = _cell_to_tile.values()
 	for tile in _tile_pool:
-		if not tile.visible:
+		if not tile.visible and not active_tiles.has(tile):
 			tile.reset()
 			tile.visible = true
 			tile.z_index = 5

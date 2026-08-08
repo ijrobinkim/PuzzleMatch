@@ -213,8 +213,12 @@ func _on_copy_log_pressed() -> void:
 	lines.append("")
 	
 	lines.append("--- TILE TYPES GRID ---")
+	var header := "   "
+	for x in m.width:
+		header += "%3d" % x
+	lines.append(header)
 	for y in m.height:
-		var row_str := ""
+		var row_str := "%d |" % y
 		for x in m.width:
 			var t = m.types[x][y]
 			var t_str = str(t)
@@ -225,8 +229,9 @@ func _on_copy_log_pressed() -> void:
 	lines.append("")
 	
 	lines.append("--- BONUSES GRID ---")
+	lines.append(header)
 	for y in m.height:
-		var row_str := ""
+		var row_str := "%d |" % y
 		for x in m.width:
 			var b = m.bonuses[x][y]
 			var b_str = " ."

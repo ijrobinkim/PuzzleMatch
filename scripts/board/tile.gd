@@ -67,6 +67,7 @@ func setup(p_cell: Vector2i, p_type: int, bonus_kind: String, cell_size: float) 
 
 	if sprite:
 		sprite.frame = max(0, p_type)
+		sprite.visible = true
 
 	if bonus_overlay:
 		bonus_overlay.rotation_degrees = 0.0

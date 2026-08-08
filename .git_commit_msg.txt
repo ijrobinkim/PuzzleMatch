@@ -1,0 +1,28 @@
+feat(column): fix gimmick cascade physics & debug log enhancement (v0.0.1.18)
+
+Column gimmick fixes:
+- Fix allows_falling=false preserved; column-specific gravity override added
+  in _apply_gravity so columns collapse downward only when cell below is empty
+- Fix diagonal gravity: _move_tile_internal + diag loop now guard against
+  writing gems INTO column cells and pulling gems OUT of column cells
+- Fix board-wide single-column damage filter: normal matches break at most
+  ONE column segment across the entire board per turn (lowest y wins)
+- Fix cascade view bug: gimmick falls no longer move invisible EMPTY_TYPE
+  gem tiles in _cell_to_tile, preventing blank/missing cells after columns
+  cascade down (was corrupting refill animations)
+- Fix animate_tile_drop lambda widened to Node2D to accept ColumnElements
+  without runtime type error; stop_animations guarded with has_method
+
+Debug log enhancements:
+- Board state copy now includes: initial tile grid, initial bonus grid,
+  initial gimmicks list, player action history, runtime event log
+- Gimmick map entries now show tile_type and bonus inside each cell
+- Board integrity check at top of copy output (orphan EMPTY_TYPE cells)
+- Cascade step logs: [캐스케이드 소거], [낙하], [보충] per step
+- Cascade finish logs: integrity warning if any non-gimmick cell is
+  still EMPTY_TYPE after all cascades complete
+
+Misc:
+- Duplicate _init constructor in board_model.gd removed (caused parse errors)
+- _init restored with match reroll loop, _load_initial_elements (pos-key
+  support), has_any_valid_move/reshuffle, objective field, debug captures
