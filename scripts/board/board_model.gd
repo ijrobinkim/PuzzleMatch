@@ -241,9 +241,17 @@ func is_objective_completed() -> bool:
 func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = []) -> void:
 	var damaged_targets: Dictionary = {}
 	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
-	
-	# 1. Self damage for all cleared cells
-	for cell_val in cleared_cells:
+
+	# 1. Self damage for all cleared cells, plus any matched cells that were
+	# excluded from cleared_cells because they became a new bonus item's
+	# spawn position (see _run_cascade_async) — a gimmick sitting there
+	# (e.g. ice/snow under a 4/5-match) must still take self-damage.
+	var self_damage_cells: Array = cleared_cells.duplicate()
+	for c in normal_match_cells:
+		if not self_damage_cells.has(c):
+			self_damage_cells.append(c)
+
+	for cell_val in self_damage_cells:
 		var cell: Vector2i = cell_val
 		if elements_map.has(cell):
 			var elem: BaseElement = elements_map[cell]

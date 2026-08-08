@@ -324,9 +324,9 @@ func _perform_user_swap(a: Vector2i, b: Vector2i) -> void:
 			_is_animating = true
 			var revert_tween := create_tween().set_parallel(true)
 			if tile_a:
-				revert_tween.tween_property(tile_a, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				revert_tween.tween_property(tile_a, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 			if tile_b:
-				revert_tween.tween_property(tile_b, "position", Vector2(a.x, a.y) * CELL_SIZE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				revert_tween.tween_property(tile_b, "position", Vector2(b.x, b.y) * CELL_SIZE, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 			await revert_tween.finished
 			_is_animating = false
 			_schedule_hint_timer()

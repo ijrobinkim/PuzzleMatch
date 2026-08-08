@@ -26,6 +26,13 @@ func stop_animations() -> void:
 	if _active_tween and _active_tween.is_valid():
 		_active_tween.kill()
 		_active_tween = null
+		# An interrupted animation (e.g. a bonus item's creation pop cut short
+		# by a fall animation starting on the same tile) must not leave scale
+		# stuck mid-transition until whatever interrupts it happens to reset
+		# it — snap back to normal immediately, independent of what follows.
+		scale = Vector2.ONE
+		if visual:
+			visual.scale = Vector2.ONE
 
 func _ensure_nodes() -> void:
 	if visual == null:

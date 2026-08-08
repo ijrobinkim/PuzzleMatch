@@ -1,6 +1,6 @@
 extends Node2D
 
-const BGM_STREAM: AudioStream = preload("res://assets/audio/bgm/bgm_ambient_loop.wav")
+const BGM_STREAM: AudioStream = preload("res://assets/audio/bgm/bgm_royal_kingdom.wav")
 
 @onready var _board_view: BoardView = $BoardView
 @onready var _overlay: LevelResultOverlay = $LevelResultOverlay

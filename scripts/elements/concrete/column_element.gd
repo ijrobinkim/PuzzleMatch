@@ -7,3 +7,8 @@ func _init() -> void:
 	max_health = 1
 	is_obstacle = true
 	allows_falling = false
+	# Royal Kingdom design: a column ("Ice Bar" equivalent) is a fixed
+	# obstacle destructible only by a special item explosion hitting its own
+	# cell directly (rocket/bomb/spinner blast), never by an ordinary
+	# adjacent match.
+	allows_adjacent_damage = false
