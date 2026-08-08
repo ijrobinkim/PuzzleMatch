@@ -18,18 +18,16 @@ func _ready() -> void:
 
 
 func play_music(stream: AudioStream, fade_in: bool = true) -> void:
-	if stream is AudioStreamWAV:
-		(stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
 	_music_player.stream = stream
 	_music_player.play()
 
 
-## Starts (or keeps playing) the given music stream without restarting it
-## from the beginning if it's already the one currently playing — safe to
-## call on every stage load to guarantee BGM survives scene-internal
-## transitions that don't re-run _ready() (e.g. moving to the next stage).
+## Starts the given music stream only if nothing is currently playing —
+## safe to call on every stage load to guarantee BGM survives scene-internal
+## transitions that don't re-run _ready() (e.g. moving to the next stage),
+## without restarting an already-playing track from the beginning.
 func ensure_music_playing(stream: AudioStream) -> void:
-	if _music_player.stream == stream and _music_player.playing:
+	if _music_player.playing:
 		return
 	play_music(stream)
 
