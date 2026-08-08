@@ -218,28 +218,38 @@ func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = 
 				if is_in_bounds(neighbor) and elements_map.has(neighbor):
 					var elem: BaseElement = elements_map[neighbor]
 					if elem != null and elem.allows_adjacent_damage and not cleared_cells.has(neighbor):
-						if elem.element_id == "column" and d.x == 0:
-							continue # Skip vertical adjacent damage (up/down) for columns
 						if not damaged_targets.has(elem):
 							damaged_targets[elem] = "normal"
 	
 	# Filter columns: If it is normal match damage ("normal"), only allow at most ONE column element
-	# in the entire board to take damage. We pick the one with the maximum y coordinate (lowest segment).
-	# This ensures only one column segment breaks per match across the whole board.
+	# in the entire board to take damage. We pick the actual bottom of the pillar.
 	var lowest_column: BaseElement = null
 	for elem in damaged_targets.keys():
 		if elem.element_id == "column" and damaged_targets[elem] == "normal":
-			if lowest_column == null or elem.grid_position.y > lowest_column.grid_position.y:
-				lowest_column = elem
+			# Find the actual bottom of this pillar
+			var bottom_elem = elem
+			var check_y = elem.grid_position.y + 1
+			while check_y < height:
+				var down_pos = Vector2i(elem.grid_position.x, check_y)
+				if elements_map.has(down_pos) and elements_map[down_pos].element_id == "column":
+					bottom_elem = elements_map[down_pos]
+					check_y += 1
+				else:
+					break
+					
+			if lowest_column == null or bottom_elem.grid_position.y > lowest_column.grid_position.y:
+				lowest_column = bottom_elem
 
 	var columns_to_remove: Array = []
 	for elem in damaged_targets.keys():
 		if elem.element_id == "column" and damaged_targets[elem] == "normal":
-			if elem != lowest_column:
-				columns_to_remove.append(elem)
+			columns_to_remove.append(elem)
 
 	for elem in columns_to_remove:
 		damaged_targets.erase(elem)
+		
+	if lowest_column != null:
+		damaged_targets[lowest_column] = "normal"
 
 	for elem in damaged_targets.keys():
 		(elem as BaseElement).take_damage(1)
