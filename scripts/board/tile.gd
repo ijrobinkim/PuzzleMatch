@@ -208,6 +208,8 @@ func animate_converge_to(target_cell: Vector2i, cell_size: float, duration: floa
 	if tween == null:
 		position = target_pos
 		return null
+	if Engine.time_scale > 0.0:
+		tween.set_speed_scale(1.0 / Engine.time_scale)
 	_active_tween = tween
 	tween.set_parallel(true)
 	tween.tween_property(self, "position", target_pos, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -226,10 +228,13 @@ func animate_gather_target(duration: float = 0.32) -> Tween:
 	if tween == null:
 		if visual: visual.scale = Vector2.ONE
 		return null
+	if Engine.time_scale > 0.0:
+		tween.set_speed_scale(1.0 / Engine.time_scale)
 	_active_tween = tween
 	if visual:
-		tween.tween_property(visual, "scale", Vector2(0.82, 0.82), duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		tween.tween_property(visual, "scale", Vector2.ONE, duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		visual.scale = Vector2(0.8, 0.8)
+		tween.tween_property(visual, "scale", Vector2(1.2, 1.2), duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.chain().tween_property(visual, "scale", Vector2.ONE, duration * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	return tween
 
 func animate_item_transform(bonus_kind: String, duration: float = 0.35) -> Tween:
@@ -247,6 +252,8 @@ func animate_item_transform(bonus_kind: String, duration: float = 0.35) -> Tween
 		if visual: visual.scale = Vector2.ONE
 		modulate = Color.WHITE
 		return null
+	if Engine.time_scale > 0.0:
+		tween.set_speed_scale(1.0 / Engine.time_scale)
 	_active_tween = tween
 	tween.set_parallel(true)
 	if visual:
@@ -263,6 +270,8 @@ func animate_hint_nudge(dir: Vector2, cell_size: float) -> Tween:
 	var tween := create_tween()
 	if tween == null:
 		return null
+	if Engine.time_scale > 0.0:
+		tween.set_speed_scale(1.0 / Engine.time_scale)
 	_active_tween = tween
 	var base_pos := Vector2(cell.x, cell.y) * cell_size
 	var target_pos := base_pos + dir.normalized() * (cell_size * 0.22)
@@ -286,6 +295,8 @@ func animate_hint_pulse() -> Tween:
 	var tween := create_tween()
 	if tween == null:
 		return null
+	if Engine.time_scale > 0.0:
+		tween.set_speed_scale(1.0 / Engine.time_scale)
 	_active_tween = tween
 	tween.set_parallel(true)
 	if visual:
@@ -305,6 +316,8 @@ func animate_hint_match_pulse() -> Tween:
 	var tween := create_tween()
 	if tween == null:
 		return null
+	if Engine.time_scale > 0.0:
+		tween.set_speed_scale(1.0 / Engine.time_scale)
 	_active_tween = tween
 	tween.set_parallel(true)
 	if visual:

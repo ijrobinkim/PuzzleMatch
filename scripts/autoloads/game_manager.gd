@@ -10,6 +10,7 @@ signal game_paused(is_paused: bool)
 
 var current_level_id: String = ""
 var is_paused: bool = false
+var default_speed_initialized: bool = false
 
 
 func change_scene(path: String) -> void:

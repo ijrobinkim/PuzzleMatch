@@ -503,7 +503,7 @@ func _process_cascade_pipeline() -> void:
 					_element_nodes.erase(elem.grid_position)
 					var delay: float = get_elem_delay.call(elem)
 					if delay > 0.0:
-						var elem_ref := elem
+						var elem_ref: BaseElement = elem
 						get_tree().create_timer(delay).timeout.connect(func():
 							if is_instance_valid(elem_ref):
 								elem_ref.visual_destroy()
@@ -511,6 +511,28 @@ func _process_cascade_pipeline() -> void:
 					else:
 						elem.visual_destroy()
 					has_gather_tweens = true
+
+			# 0b. Damaged gimmick elements (took damage but not destroyed)
+			# Trigger timer immediately so it fires on impact as rocket/bomb passes through!
+			var step_damaged_elements: Array = step.get("damaged_elements", [])
+			for d_item in step_damaged_elements:
+				var elem: BaseElement = d_item.get("element")
+				var hp: int = d_item.get("health", -1)
+				if is_instance_valid(elem) and elem.has_method("visual_take_damage"):
+					var delay: float = get_elem_delay.call(elem)
+					if delay > 0.0:
+						var elem_ref: BaseElement = elem
+						get_tree().create_timer(delay).timeout.connect(func():
+							if is_instance_valid(elem_ref):
+								elem_ref.visual_take_damage(hp)
+						)
+					else:
+						# For normal matches (no rocket/bomb), trigger when adjacent tiles break
+						var elem_ref: BaseElement = elem
+						get_tree().create_timer(0.20).timeout.connect(func():
+							if is_instance_valid(elem_ref):
+								elem_ref.visual_take_damage(hp)
+						)
 
 			# A. Normal cleared tiles (not part of item creation gathering or spinner impact area)
 			for cell in cleared_cells:
@@ -549,28 +571,6 @@ func _process_cascade_pipeline() -> void:
 			if has_gather_tweens:
 				var wait_time: float = maxf(0.23, maxf(max_rocket_delay, max_bomb_delay) + 0.18)
 				await get_tree().create_timer(wait_time).timeout
-
-			# 0b. Damaged gimmick elements (took damage but not destroyed)
-			# Trigger immediately on rocket/bomb impact, or after tile break for normal matches
-			var step_damaged_elements: Array = step.get("damaged_elements", [])
-			for d_item in step_damaged_elements:
-				var elem = d_item.get("element")
-				var hp: int = d_item.get("health", -1)
-				if is_instance_valid(elem) and elem.has_method("visual_take_damage"):
-					var delay: float = get_elem_delay.call(elem)
-					if delay > 0.0:
-						var elem_ref := elem
-						get_tree().create_timer(delay).timeout.connect(func():
-							if is_instance_valid(elem_ref):
-								elem_ref.visual_take_damage(hp)
-						)
-					else:
-						# For normal matches (no rocket/bomb), trigger when adjacent tiles break
-						var elem_ref := elem
-						get_tree().create_timer(0.20).timeout.connect(func():
-							if is_instance_valid(elem_ref):
-								elem_ref.visual_take_damage(hp)
-						)
 
 			# Process Spinner cross flash & pinpoint flying propeller animations
 			var spinners_in_step: Array = step.get("spinners", [])
@@ -758,7 +758,8 @@ func _schedule_hint_timer() -> void:
 		return
 	if not is_inside_tree() or get_tree() == null:
 		return
-	var timer := get_tree().create_timer(2.0)
+	var wait_sec := 2.0 * (Engine.time_scale if Engine.time_scale > 0.0 else 1.0)
+	var timer := get_tree().create_timer(wait_sec)
 	_hint_timer = timer
 	timer.timeout.connect(func():
 		if _hint_timer == timer:
@@ -783,11 +784,15 @@ func _show_hint_region_boxes(cells: Array) -> void:
 		_hint_outline_drawer.modulate.a = 0.0
 		_hint_outline_drawer.visible = true
 		var tween := create_tween()
+		if Engine.time_scale > 0.0:
+			tween.set_speed_scale(1.0 / Engine.time_scale)
 		tween.tween_property(_hint_outline_drawer, "modulate:a", 1.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 func _hide_hint_region_boxes() -> void:
 	if _hint_outline_drawer and _hint_outline_drawer.visible:
 		var tween := create_tween()
+		if Engine.time_scale > 0.0:
+			tween.set_speed_scale(1.0 / Engine.time_scale)
 		tween.tween_property(_hint_outline_drawer, "modulate:a", 0.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tween.finished.connect(func():
 			if _hint_outline_drawer:
@@ -857,20 +862,22 @@ func _run_hint_loop() -> void:
 				tile.animate_hint_match_pulse()
 
 	_hint_cycle_count += 1
-	var wait_duration := 1.2
+	var base_wait := 1.2
 	if _hint_cycle_count >= 3:
 		_hint_cycle_count = 0
 		_current_hint_index += 1
-		wait_duration = 1.2 + 2.0
+		base_wait = 1.2 + 2.0
 		
-		var rest_timer := get_tree().create_timer(1.2)
+		var rest_time := 1.2 * (Engine.time_scale if Engine.time_scale > 0.0 else 1.0)
+		var rest_timer := get_tree().create_timer(rest_time)
 		rest_timer.timeout.connect(func():
 			if _is_hint_active:
 				_reset_hint_tile_visuals()
 				_hide_hint_region_boxes()
 		)
 
-	var loop_timer := get_tree().create_timer(wait_duration)
+	var loop_time := base_wait * (Engine.time_scale if Engine.time_scale > 0.0 else 1.0)
+	var loop_timer := get_tree().create_timer(loop_time)
 	_hint_loop_timer = loop_timer
 	loop_timer.timeout.connect(func():
 		if _hint_loop_timer == loop_timer and _is_hint_active:

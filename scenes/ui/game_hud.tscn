@@ -116,3 +116,9 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 focus_mode = 0
 text = "🎁 아이템 랜덤 배치"
+
+[node name="SpeedButton" type="Button" parent="TopRight" unique_id=2081928374]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+focus_mode = 0
+text = "⚡ 배속: 1.0x"
