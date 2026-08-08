@@ -34,6 +34,7 @@ var types: Array = []
 var bonuses: Array = []
 var elements_map: Dictionary = {}
 var _step_destroyed_elements: Array = []
+var _step_damaged_elements: Array = []
 var moves_remaining: int
 var score: int = 0
 var objective: int
@@ -153,6 +154,8 @@ func set_element(cell: Vector2i, element: BaseElement) -> void:
 		element.grid_position = cell
 		if not element.element_destroyed.is_connected(_on_element_destroyed):
 			element.element_destroyed.connect(_on_element_destroyed)
+		if not element.element_damaged.is_connected(_on_element_damaged):
+			element.element_damaged.connect(_on_element_damaged)
 		
 		# If the element is Column, clear any gem block underneath it to make it empty inside.
 		if element.element_id == "column":
@@ -164,6 +167,10 @@ func get_element(cell: Vector2i) -> BaseElement:
 		if is_instance_valid(elem):
 			return elem as BaseElement
 	return null
+
+func _on_element_damaged(element: BaseElement, current_hp: int) -> void:
+	if element != null and current_hp > 0:
+		_step_damaged_elements.append({"element": element, "health": current_hp})
 
 func _on_element_destroyed(element: BaseElement) -> void:
 	if element != null and not element.element_id.is_empty():
@@ -601,6 +608,7 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 				"spinners": [],
 				"rockets": [],
 				"destroyed_elements": _step_destroyed_elements.duplicate(),
+				"damaged_elements": _step_damaged_elements.duplicate(),
 				"is_electro_stagger": true,
 			})
 
@@ -691,6 +699,7 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 				"spinners": [],
 				"rockets": [],
 				"destroyed_elements": _step_destroyed_elements.duplicate(),
+				"damaged_elements": _step_damaged_elements.duplicate(),
 				"staggered_clears": staggered_clears,
 			})
 
@@ -1316,6 +1325,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 	while has_more_work:
 		has_more_work = false
 		_step_destroyed_elements.clear()
+		_step_damaged_elements.clear()
 		
 		var matches := find_matches(current_swap_target)
 		var match_infos: Array = []
@@ -1418,7 +1428,8 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 				"refills": refills,
 				"spinners": emit_spinners,
 				"rockets": emit_rockets,
-				"destroyed_elements": _step_destroyed_elements.duplicate()
+				"destroyed_elements": _step_destroyed_elements.duplicate(),
+				"damaged_elements": _step_damaged_elements.duplicate()
 			})
 
 			has_more_work = true

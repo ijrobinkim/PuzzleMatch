@@ -64,15 +64,16 @@ func _build_visual_nodes() -> void:
 func take_damage(amount: int = 1) -> void:
 	current_health -= amount
 	element_damaged.emit(self, current_health)
-	_update_visuals()
 	
 	if current_health <= 0:
 		destroy()
-	else:
-		if is_inside_tree() and get_tree() != null:
-			var tw := create_tween()
-			tw.tween_property(self, "scale", Vector2(1.25, 1.25), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			tw.tween_property(self, "scale", Vector2.ONE, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+func visual_take_damage(hp: int = -1) -> void:
+	_update_visuals()
+	if is_inside_tree() and get_tree() != null:
+		var tw := create_tween()
+		tw.tween_property(self, "scale", Vector2(1.25, 1.25), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(self, "scale", Vector2.ONE, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 func destroy() -> void:
 	element_destroyed.emit(self)
