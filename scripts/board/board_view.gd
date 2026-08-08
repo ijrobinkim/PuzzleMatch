@@ -476,20 +476,37 @@ func _process_cascade_pipeline() -> void:
 					if delay > max_bomb_delay:
 						max_bomb_delay = delay
 
+			# Helper lambda to find impact delay for any gimmick element (including multi-cell 2x2)
+			var get_elem_delay = func(elem: BaseElement) -> float:
+				var min_d: float = -1.0
+				var check_cells: Array[Vector2i] = []
+				if elem.element_id == "trophy_cabinet":
+					var gpos: Vector2i = elem.grid_position
+					check_cells = [gpos, gpos + Vector2i(1, 0), gpos + Vector2i(0, 1), gpos + Vector2i(1, 1)]
+				else:
+					check_cells = [elem.grid_position]
+				for c in check_cells:
+					if rocket_delay_map.has(c):
+						var d: float = rocket_delay_map[c]
+						if min_d < 0.0 or d < min_d:
+							min_d = d
+					elif bomb_delay_map.has(c):
+						var d: float = bomb_delay_map[c]
+						if min_d < 0.0 or d < min_d:
+							min_d = d
+				return min_d
+
 			# 0. Destroyed gimmick elements
 			var step_destroyed_elements: Array = step.get("destroyed_elements", [])
 			for elem in step_destroyed_elements:
 				if is_instance_valid(elem) and elem.has_method("visual_destroy"):
-					var cell: Vector2i = elem.grid_position
-					_element_nodes.erase(cell)
-					var delay: float = rocket_delay_map.get(cell, 0.0)
-					if delay == 0.0:
-						delay = bomb_delay_map.get(cell, 0.0)
-					
+					_element_nodes.erase(elem.grid_position)
+					var delay: float = get_elem_delay.call(elem)
 					if delay > 0.0:
+						var elem_ref := elem
 						get_tree().create_timer(delay).timeout.connect(func():
-							if is_instance_valid(elem):
-								elem.visual_destroy()
+							if is_instance_valid(elem_ref):
+								elem_ref.visual_destroy()
 						)
 					else:
 						elem.visual_destroy()
@@ -533,13 +550,27 @@ func _process_cascade_pipeline() -> void:
 				var wait_time: float = maxf(0.23, maxf(max_rocket_delay, max_bomb_delay) + 0.18)
 				await get_tree().create_timer(wait_time).timeout
 
-			# 0b. Damaged gimmick elements (took damage but not destroyed) - Trigger hit reaction AFTER tiles finish breaking!
+			# 0b. Damaged gimmick elements (took damage but not destroyed)
+			# Trigger immediately on rocket/bomb impact, or after tile break for normal matches
 			var step_damaged_elements: Array = step.get("damaged_elements", [])
 			for d_item in step_damaged_elements:
 				var elem = d_item.get("element")
 				var hp: int = d_item.get("health", -1)
 				if is_instance_valid(elem) and elem.has_method("visual_take_damage"):
-					elem.visual_take_damage(hp)
+					var delay: float = get_elem_delay.call(elem)
+					if delay > 0.0:
+						var elem_ref := elem
+						get_tree().create_timer(delay).timeout.connect(func():
+							if is_instance_valid(elem_ref):
+								elem_ref.visual_take_damage(hp)
+						)
+					else:
+						# For normal matches (no rocket/bomb), trigger when adjacent tiles break
+						var elem_ref := elem
+						get_tree().create_timer(0.20).timeout.connect(func():
+							if is_instance_valid(elem_ref):
+								elem_ref.visual_take_damage(hp)
+						)
 
 			# Process Spinner cross flash & pinpoint flying propeller animations
 			var spinners_in_step: Array = step.get("spinners", [])
