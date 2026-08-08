@@ -15,7 +15,6 @@ const MAX_STAGES: int = 30
 var _pending_result: Dictionary = {}
 
 func _ready() -> void:
-	AudioManager.play_music(BGM_STREAM)
 	EventBus.level_completed.connect(_on_level_completed)
 	EventBus.level_failed.connect(_on_level_failed)
 
@@ -43,6 +42,7 @@ func _ready() -> void:
 	_load_stage(1)
 
 func _load_stage(stage_idx: int) -> void:
+	AudioManager.ensure_music_playing(BGM_STREAM)
 	_pending_result = {}
 	current_stage_idx = clampi(stage_idx, 1, MAX_STAGES)
 	var tres_path := "res://resources/levels/level_%03d.tres" % current_stage_idx
