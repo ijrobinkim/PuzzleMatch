@@ -1028,8 +1028,8 @@ func _apply_gravity(cleared_cells: Array) -> Array:
 					moved = true
 					continue
 					
-				# 2. Diagonal falls
-				if _is_column_blocked_above(x, y):
+				# 3. Diagonal falls
+				if up_blocked or _is_column_blocked_above(x, y):
 					var diags := []
 					if _rng.randi() % 2 == 0:
 						if x > 0: diags.append(Vector2i(x - 1, y - 1))
