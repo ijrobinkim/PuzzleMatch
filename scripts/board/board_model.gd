@@ -206,8 +206,6 @@ func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = 
 				
 	# 2. Adjacent damage propagation from normal matching cells only
 	var adjacent_sources = normal_match_cells
-	if adjacent_sources.is_empty():
-		adjacent_sources = cleared_cells
 		
 	for cell_val in adjacent_sources:
 		var cell: Vector2i = cell_val
