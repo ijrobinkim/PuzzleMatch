@@ -73,6 +73,8 @@ func take_damage(amount: int = 1) -> void:
 
 func destroy() -> void:
 	element_destroyed.emit(self)
+	if is_inside_tree() and get_tree() != null:
+		await get_tree().create_timer(0.2).timeout
 	_spawn_debris()
 	queue_free()
 
