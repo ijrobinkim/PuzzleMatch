@@ -7,5 +7,6 @@ func _init() -> void:
 	item_to_spawn = "bird"
 	spawn_count = 1
 	max_health = 2
+	current_health = 2
 	is_obstacle = true
 	allows_falling = false

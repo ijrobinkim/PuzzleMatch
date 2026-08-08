@@ -7,6 +7,7 @@ signal nest_relocated(element: DragonBoxElement, new_grid_pos: Vector2i)
 func _init() -> void:
 	element_id = "dragon_box"
 	max_health = 3
+	current_health = 3
 	is_obstacle = true
 	allows_falling = false
 

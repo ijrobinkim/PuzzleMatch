@@ -6,7 +6,10 @@ signal element_damaged(element: BaseElement, current_health: int)
 signal element_destroyed(element: BaseElement)
 
 @export var element_id: String = ""
-@export var max_health: int = 1
+@export var max_health: int = 1:
+	set(value):
+		max_health = value
+		current_health = value
 @export var is_obstacle: bool = true
 @export var allows_falling: bool = false
 @export var allows_adjacent_damage: bool = true
