@@ -495,26 +495,6 @@ func _process_cascade_pipeline() -> void:
 						elem.visual_destroy()
 					has_gather_tweens = true
 
-			# 0b. Damaged gimmick elements (took damage but not destroyed)
-			var step_damaged_elements: Array = step.get("damaged_elements", [])
-			for d_item in step_damaged_elements:
-				var elem = d_item.get("element")
-				var hp: int = d_item.get("health", -1)
-				if is_instance_valid(elem) and elem.has_method("visual_take_damage"):
-					var cell: Vector2i = elem.grid_position
-					var delay: float = rocket_delay_map.get(cell, 0.0)
-					if delay == 0.0:
-						delay = bomb_delay_map.get(cell, 0.0)
-					
-					if delay > 0.0:
-						get_tree().create_timer(delay).timeout.connect(func():
-							if is_instance_valid(elem):
-								elem.visual_take_damage(hp)
-						)
-					else:
-						elem.visual_take_damage(hp)
-					has_gather_tweens = true
-
 			# A. Normal cleared tiles (not part of item creation gathering or spinner impact area)
 			for cell in cleared_cells:
 				if not converging_cells.has(cell):
@@ -552,6 +532,14 @@ func _process_cascade_pipeline() -> void:
 			if has_gather_tweens:
 				var wait_time: float = maxf(0.23, maxf(max_rocket_delay, max_bomb_delay) + 0.18)
 				await get_tree().create_timer(wait_time).timeout
+
+			# 0b. Damaged gimmick elements (took damage but not destroyed) - Trigger hit reaction AFTER tiles finish breaking!
+			var step_damaged_elements: Array = step.get("damaged_elements", [])
+			for d_item in step_damaged_elements:
+				var elem = d_item.get("element")
+				var hp: int = d_item.get("health", -1)
+				if is_instance_valid(elem) and elem.has_method("visual_take_damage"):
+					elem.visual_take_damage(hp)
 
 			# Process Spinner cross flash & pinpoint flying propeller animations
 			var spinners_in_step: Array = step.get("spinners", [])

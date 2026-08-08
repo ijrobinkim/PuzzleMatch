@@ -69,6 +69,8 @@ func take_damage(amount: int = 1) -> void:
 		destroy()
 
 func visual_take_damage(hp: int = -1) -> void:
+	if hp != -1:
+		current_health = hp
 	_update_visuals()
 	if is_inside_tree() and get_tree() != null:
 		var tw := create_tween()
