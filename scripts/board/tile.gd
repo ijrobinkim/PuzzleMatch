@@ -2,9 +2,9 @@ class_name Tile
 extends Node2D
 
 const BREAK_SFX: Array[AudioStream] = [
-	preload("res://assets/sound/sfx/block_pop1.wav"),
-	preload("res://assets/sound/sfx/block_pop2.wav"),
-	preload("res://assets/sound/sfx/block_pop3.wav"),
+	preload("res://assets/audio/sfx/block_pop1.wav"),
+	preload("res://assets/audio/sfx/block_pop2.wav"),
+	preload("res://assets/audio/sfx/block_pop3.wav"),
 ]
 
 var visual: Node2D

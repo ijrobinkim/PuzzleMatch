@@ -1,5 +1,7 @@
 extends Node2D
 
+const BGM_STREAM: AudioStream = preload("res://assets/audio/bgm/bgm_ambient_loop.wav")
+
 @onready var _board_view: BoardView = $BoardView
 @onready var _overlay: LevelResultOverlay = $LevelResultOverlay
 @onready var _hud: GameHUD = $GameHUD
@@ -13,6 +15,7 @@ const MAX_STAGES: int = 30
 var _pending_result: Dictionary = {}
 
 func _ready() -> void:
+	AudioManager.play_music(BGM_STREAM)
 	EventBus.level_completed.connect(_on_level_completed)
 	EventBus.level_failed.connect(_on_level_failed)
 

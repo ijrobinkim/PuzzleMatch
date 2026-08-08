@@ -2,6 +2,11 @@
 class_name BaseElement
 extends Node2D
 
+## Web export ships no color-emoji glyphs, so element icons must use plain
+## Korean text via this font rather than emoji (which render as tofu boxes).
+const KOREAN_FONT: Font = preload("res://assets/fonts/malgun.ttf")
+const GIMMICK_HIT_SFX: AudioStream = preload("res://assets/audio/sfx/gimmick_hit.wav")
+
 signal element_damaged(element: BaseElement, current_health: int)
 signal element_destroyed(element: BaseElement)
 
@@ -48,7 +53,8 @@ func _build_visual_nodes() -> void:
 	_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_icon_label.add_theme_font_size_override("font_size", 84)
+	_icon_label.add_theme_font_override("font", KOREAN_FONT)
+	_icon_label.add_theme_font_size_override("font_size", 24)
 	add_child(_icon_label)
 
 	_hp_label = Label.new()
@@ -72,6 +78,7 @@ func visual_take_damage(hp: int = -1) -> void:
 	if hp != -1:
 		current_health = hp
 	_update_visuals()
+	AudioManager.play_sfx(GIMMICK_HIT_SFX, randf_range(0.95, 1.1))
 	if is_inside_tree() and get_tree() != null:
 		var tw := create_tween()
 		tw.tween_property(self, "scale", Vector2(1.25, 1.25), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -82,6 +89,7 @@ func destroy() -> void:
 
 func visual_destroy() -> void:
 	_spawn_debris()
+	AudioManager.play_sfx(GIMMICK_HIT_SFX, randf_range(0.75, 0.85))
 	queue_free()
 
 func _spawn_debris() -> void:
@@ -137,11 +145,11 @@ func _get_element_color() -> Color:
 
 func _get_element_icon() -> String:
 	match element_id:
-		"box": return "📦"
-		"snow": return "❄️"
-		"ivy": return "🌿"
-		"column": return "🏛️"
-		"birdhouse": return "🐦"
-		"steam_bomb": return "💣"
-		"dragon_box": return "🐉"
-		_: return "❓"
+		"box": return "상자"
+		"snow": return "얼음"
+		"ivy": return "덩굴"
+		"column": return "기둥"
+		"birdhouse": return "새집"
+		"steam_bomb": return "폭탄"
+		"dragon_box": return "드래곤"
+		_: return "?"

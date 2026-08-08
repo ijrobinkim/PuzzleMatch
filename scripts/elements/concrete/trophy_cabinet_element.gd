@@ -29,6 +29,6 @@ func _update_visuals() -> void:
 		_bg_rect.color = Color(0.3, 0.25, 0.45) if current_health == 11 else Color(0.85, 0.65, 0.15)
 	if _icon_label:
 		if current_health >= 11:
-			_icon_label.text = "🚪🔒"
+			_icon_label.text = "잠김"
 		else:
-			_icon_label.text = "🏆 %d" % current_health
+			_icon_label.text = "트로피 %d" % current_health

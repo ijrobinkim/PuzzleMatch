@@ -7,11 +7,16 @@ const CELL_SIZE := 128.0
 const TILE_SCENE: PackedScene = preload("res://scenes/board/tile.tscn")
 
 const BOOM_SFX: Array[AudioStream] = [
-	preload("res://assets/sound/sfx/Boom/Boom7.wav"),
-	preload("res://assets/sound/sfx/Boom/Boom9.wav"),
-	preload("res://assets/sound/sfx/Boom/Boom10.wav"),
-	preload("res://assets/sound/sfx/Boom/Boom22.wav"),
+	preload("res://assets/audio/sfx/Boom/Boom7.wav"),
+	preload("res://assets/audio/sfx/Boom/Boom9.wav"),
+	preload("res://assets/audio/sfx/Boom/Boom10.wav"),
+	preload("res://assets/audio/sfx/Boom/Boom22.wav"),
 ]
+
+const SWAP_FAIL_SFX: AudioStream = preload("res://assets/audio/sfx/swap_fail.wav")
+const ITEM_CREATE_SFX: AudioStream = preload("res://assets/audio/sfx/item_create.wav")
+const SPINNER_WHOOSH_SFX: AudioStream = preload("res://assets/audio/sfx/spinner_whoosh.wav")
+const ELECTRO_ZAP_SFX: AudioStream = preload("res://assets/audio/sfx/electro_zap.wav")
 
 var model: BoardModel
 var _tile_pool: Array = []
@@ -349,6 +354,7 @@ func _on_swap_committed(a: Vector2i, b: Vector2i) -> void:
 
 func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 	_cancel_hint_timers()
+	AudioManager.play_sfx(SWAP_FAIL_SFX)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if model == null or _input_locked:
@@ -474,6 +480,8 @@ func _process_cascade_pipeline() -> void:
 				if is_instance_valid(tile) and tile.bonus_kind == BoardModel.BONUS_ELECTRO_BALL:
 					electro_center = tile.cell
 					break
+			if electro_center != Vector2i(-1, -1):
+				AudioManager.play_sfx(ELECTRO_ZAP_SFX)
 
 			var max_delay := 0.0
 			for sc in staggered_clears:
@@ -1007,6 +1015,7 @@ func _animate_spinner_event(sp: Dictionary) -> Tween:
 	# Wind-up in place (0.15s)
 	tween.tween_property(flying_prop, "scale", Vector2(1.15, 1.15), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(flying_prop, "rotation_degrees", 360.0, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	get_tree().create_timer(0.15).timeout.connect(func(): AudioManager.play_sfx(SPINNER_WHOOSH_SFX))
 
 	# Flight phase (runs after wind-up finishes)
 	tween.chain().tween_method(func(t: float):
@@ -1142,10 +1151,12 @@ func _stagger_item_transform(tile: Tile, cell: Vector2i, type: int, kind: String
 			if is_instance_valid(tile):
 				tile.setup(cell, type, kind, CELL_SIZE)
 				tile.animate_item_transform(kind, 0.35)
+				AudioManager.play_sfx(ITEM_CREATE_SFX)
 		)
 	else:
 		tile.setup(cell, type, kind, CELL_SIZE)
 		tile.animate_item_transform(kind, 0.35)
+		AudioManager.play_sfx(ITEM_CREATE_SFX)
 
 func _animate_staggered_clear_event(sc: Dictionary, delay: float) -> void:
 	if delay > 0.0:

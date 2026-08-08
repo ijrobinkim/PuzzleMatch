@@ -6,17 +6,18 @@ signal spawn_specials_requested
 signal next_stage_requested
 
 const KOREAN_FONT: Font = preload("res://assets/fonts/malgun.ttf")
+const UI_CLICK_SFX: AudioStream = preload("res://assets/audio/sfx/ui_click.wav")
 
 const OBJECTIVE_ICONS := {
-	"box": "📦",
-	"snow": "❄️",
-	"ivy": "🌿",
-	"column": "🏛️",
-	"birdhouse": "🐦",
-	"bird": "🐦",
-	"steam_bomb": "💣",
-	"dragon_box": "🐉",
-	"trophy_cabinet": "🏆",
+	"box": "상자",
+	"snow": "얼음",
+	"ivy": "덩굴",
+	"column": "기둥",
+	"birdhouse": "새집",
+	"bird": "새집",
+	"steam_bomb": "폭탄",
+	"dragon_box": "드래곤",
+	"trophy_cabinet": "트로피",
 }
 
 @onready var version_label: Label = $TopCenter/VersionPanel/VersionLabel
@@ -45,7 +46,7 @@ func _ready() -> void:
 	_setup_speed_button()
 	EventBus.log_emitted.connect(_on_log_emitted)
 	EventBus.objective_progress_changed.connect(_on_objective_progress_changed)
-	_add_log_line("🎮 게임 시작! (버전 v" + GameManager.GAME_VERSION + ")")
+	_add_log_line("게임 시작! (버전 v" + GameManager.GAME_VERSION + ")")
 
 func _on_objective_progress_changed(totals: Dictionary, remaining: Dictionary) -> void:
 	_objective_totals = totals
@@ -61,13 +62,13 @@ func _refresh_objective_display(remaining: Dictionary) -> void:
 	for key in _objective_totals.keys():
 		var total: int = _objective_totals[key]
 		var left: int = int(remaining.get(key, 0))
-		var icon: String = OBJECTIVE_ICONS.get(key, "🎯")
+		var icon: String = OBJECTIVE_ICONS.get(key, "목표")
 
 		var label := Label.new()
 		label.add_theme_font_override("font", KOREAN_FONT)
 		label.add_theme_font_size_override("font_size", 22)
 		if left <= 0:
-			label.text = "%s ✅" % icon
+			label.text = "%s 완료" % icon
 			label.add_theme_color_override("font_color", Color(0.55, 1.0, 0.55))
 		else:
 			label.text = "%s %d/%d" % [icon, left, total]
@@ -83,7 +84,7 @@ func _setup_restart_button() -> void:
 		return
 	restart_button.add_theme_font_override("font", KOREAN_FONT)
 	restart_button.add_theme_font_size_override("font_size", 18)
-	restart_button.text = "🔄 새로시작"
+	restart_button.text = "새로시작"
 	
 	var style_normal := StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.12, 0.12, 0.18, 0.88)
@@ -121,7 +122,7 @@ func _setup_spawn_specials_button() -> void:
 		return
 	spawn_specials_button.add_theme_font_override("font", KOREAN_FONT)
 	spawn_specials_button.add_theme_font_size_override("font_size", 16)
-	spawn_specials_button.text = "🎁 아이템 랜덤 배치"
+	spawn_specials_button.text = "아이템 랜덤 배치"
 
 	var style_normal := StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.1, 0.2, 0.25, 0.88)
@@ -157,7 +158,7 @@ func _setup_next_stage_button() -> void:
 
 	next_stage_button.add_theme_font_override("font", KOREAN_FONT)
 	next_stage_button.add_theme_font_size_override("font_size", 16)
-	next_stage_button.text = "▶️ 다음 스테이지"
+	next_stage_button.text = "다음 스테이지"
 
 	var style_normal := StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.15, 0.12, 0.25, 0.88)
@@ -233,24 +234,28 @@ func _setup_speed_button() -> void:
 	_update_speed_button_ui()
 
 func _on_speed_button_pressed() -> void:
+	AudioManager.play_sfx(UI_CLICK_SFX)
 	current_speed_step = (current_speed_step + 1) % SPEED_STEPS.size()
 	var new_speed: float = SPEED_STEPS[current_speed_step]
 	Engine.time_scale = new_speed
 	_update_speed_button_ui()
-	_add_log_line("⚡ 게임 배속 변경: %.1fx (1단계:1.0x -> 2단계:1.5x -> 3단계:2.0x)" % new_speed)
+	_add_log_line("게임 배속 변경: %.1fx (1단계:1.0x -> 2단계:1.5x -> 3단계:2.0x)" % new_speed)
 
 func _update_speed_button_ui() -> void:
 	if speed_button:
 		var speed_val: float = SPEED_STEPS[current_speed_step]
-		speed_button.text = "⚡ 배속: %.1fx" % speed_val
+		speed_button.text = "배속: %.1fx" % speed_val
 
 func _on_spawn_specials_button_pressed() -> void:
+	AudioManager.play_sfx(UI_CLICK_SFX)
 	spawn_specials_requested.emit()
 
 func _on_next_stage_button_pressed() -> void:
+	AudioManager.play_sfx(UI_CLICK_SFX)
 	next_stage_requested.emit()
 
 func _on_restart_button_pressed() -> void:
+	AudioManager.play_sfx(UI_CLICK_SFX)
 	restart_requested.emit()
 	GameManager.change_scene("res://scenes/screens/game_board_screen.tscn")
 

@@ -28,5 +28,5 @@ func explode() -> void:
 	destroy()
 
 func _get_element_icon() -> String:
-	return "💣" + str(turns_remaining)
+	return "폭탄 " + str(turns_remaining)
 

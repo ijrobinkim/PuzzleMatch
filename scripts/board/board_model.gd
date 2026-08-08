@@ -121,20 +121,20 @@ func _load_initial_elements(level_data: LevelData) -> void:
 
 static func get_color_name(type: int) -> String:
 	match type:
-		0: return "🔴 빨강"
-		1: return "🔵 파랑"
-		2: return "🟢 초록"
-		3: return "🟡 노랑"
-		4: return "🟣 보라"
-		5: return "🟠 주황"
+		0: return "빨강"
+		1: return "파랑"
+		2: return "초록"
+		3: return "노랑"
+		4: return "보라"
+		5: return "주황"
 		_: return "타일"
 
 static func get_bonus_name(kind: String) -> String:
 	match kind:
-		BONUS_ROCKET_H, BONUS_ROCKET_V: return "🚀 로켓"
-		BONUS_SPINNER: return "🌀 스피너"
-		BONUS_BOMB: return "💣 폭탄"
-		BONUS_ELECTRO_BALL: return "⚡ 일렉트로 볼"
+		BONUS_ROCKET_H, BONUS_ROCKET_V: return "로켓"
+		BONUS_SPINNER: return "스피너"
+		BONUS_BOMB: return "폭탄"
+		BONUS_ELECTRO_BALL: return "일렉트로 볼"
 		_: return ""
 
 
@@ -197,7 +197,7 @@ func _on_element_damaged(element: BaseElement, current_hp: int) -> void:
 			
 		if not obj_key.is_empty() and (element.element_id == "birdhouse" or obj_key == "bird"):
 			target_objectives_remaining[obj_key] = max(0, target_objectives_remaining[obj_key] - 1)
-			log_event.emit("[새집 발동] 🐦 새 출몰! (남은 목표: %d)" % target_objectives_remaining[obj_key])
+			log_event.emit("[새집 발동] 새 출몰! (남은 목표: %d)" % target_objectives_remaining[obj_key])
 			if target_objectives_remaining[obj_key] <= 0:
 				target_objectives_remaining.erase(obj_key)
 				_close_all_birdhouses()
@@ -497,13 +497,13 @@ func attempt_swap(a: Vector2i, b: Vector2i) -> bool:
 
 	# Case 2: Electro Ball + Color Tile
 	if bonus_a == BONUS_ELECTRO_BALL and types[b.x][b.y] != EMPTY_TYPE:
-		log_event.emit("[아이템 사용] ⚡ 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[b.x][b.y]))
+		log_event.emit("[아이템 사용] 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[b.x][b.y]))
 		swap_committed.emit(a, b)
 		_consume_move()
 		_do_electro_ball(a, b)
 		return true
 	elif bonus_b == BONUS_ELECTRO_BALL and types[a.x][a.y] != EMPTY_TYPE:
-		log_event.emit("[아이템 사용] ⚡ 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[a.x][a.y]))
+		log_event.emit("[아이템 사용] 일렉트로 볼 + %s 색상 콤보 발동!" % get_color_name(types[a.x][a.y]))
 		swap_committed.emit(a, b)
 		_consume_move()
 		_do_electro_ball(b, a)
@@ -574,10 +574,10 @@ func _consume_move() -> void:
 func _check_game_over() -> void:
 	var cleared: bool = is_objective_completed() if _has_gimmick_objective else score >= objective
 	if cleared:
-		log_event.emit("[게임 완료] 목표 기믹 달성! 🎉 (최종 점수: %d점)" % score)
+		log_event.emit("[게임 완료] 목표 기믹 달성! (최종 점수: %d점)" % score)
 		level_completed.emit()
 	elif moves_remaining <= 0:
-		log_event.emit("[게임 실패] 남은 이동 횟수 소진! 😢")
+		log_event.emit("[게임 실패] 남은 이동 횟수 소진!")
 		level_failed.emit()
 
 func _swap_cells(a: Vector2i, b: Vector2i) -> void:
@@ -1372,7 +1372,7 @@ func spawn_random_special_items() -> void:
 				valid_cells.append(Vector2i(x, y))
 
 	if valid_cells.is_empty():
-		log_event.emit("[디버그] ⚠️ 이미 모든 일반 타일에 특수 아이템이 생성되어 있습니다!")
+		log_event.emit("[디버그] 이미 모든 일반 타일에 특수 아이템이 생성되어 있습니다!")
 		return
 
 	var cell: Vector2i = valid_cells.pick_random()
@@ -1386,7 +1386,7 @@ func spawn_random_special_items() -> void:
 	var bonus: String = possible_bonuses.pick_random()
 	bonuses[cell.x][cell.y] = bonus
 
-	log_event.emit("[디버그] 🎲 (%d,%d) 위치에 %s 1개 생성!" % [cell.x, cell.y, get_bonus_name(bonus)])
+	log_event.emit("[디버그] (%d,%d) 위치에 %s 1개 생성!" % [cell.x, cell.y, get_bonus_name(bonus)])
 	special_items_spawned.emit()
 
 func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_cell: Vector2i = Vector2i(-1, -1), initial_cleared: Dictionary = {}, extra_spinners: Array = [], extra_rockets: Array = [], skip_scoring: bool = false) -> void:
@@ -1545,7 +1545,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 				if not has_static:
 					orphan_empties.append("(%d,%d)" % [x, y])
 	if not orphan_empties.is_empty():
-		log_event.emit("[⚠️ 정합성 오류] 기믹 없이 빈 셀 %d개 발견: %s" % [orphan_empties.size(), ", ".join(orphan_empties)])
+		log_event.emit("[정합성 오류] 기믹 없이 빈 셀 %d개 발견: %s" % [orphan_empties.size(), ", ".join(orphan_empties)])
 
 	if not has_any_valid_move():
 		reshuffle()
