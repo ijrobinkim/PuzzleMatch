@@ -981,7 +981,7 @@ func _is_column_blocked_above(x: int, y: int) -> bool:
 		var check_cell := Vector2i(x, check_y)
 		if elements_map.has(check_cell) and is_instance_valid(elements_map[check_cell]):
 			var elem = elements_map[check_cell]
-			if elem.element_id == "column":
+			if not elem.allows_falling:
 				return true
 	return false
 
@@ -1029,7 +1029,7 @@ func _apply_gravity(cleared_cells: Array) -> Array:
 					continue
 					
 				# 3. Diagonal falls
-				if up_blocked or _is_column_blocked_above(x, y):
+				if _is_column_blocked_above(x, y):
 					var diags := []
 					if _rng.randi() % 2 == 0:
 						if x > 0: diags.append(Vector2i(x - 1, y - 1))
@@ -1041,6 +1041,10 @@ func _apply_gravity(cleared_cells: Array) -> Array:
 					for diag in diags:
 						# Skip if the diag source cell is occupied by a static gimmick
 						if elements_map.has(diag) and is_instance_valid(elements_map[diag]) and not elements_map[diag].allows_falling:
+							continue
+						# Block falling from tiles sitting directly on top of a static gimmick (like trophy_cabinet)
+						var under_diag := Vector2i(diag.x, diag.y + 1)
+						if elements_map.has(under_diag) and is_instance_valid(elements_map[under_diag]) and not elements_map[under_diag].allows_falling:
 							continue
 						var diag_blocked = elements_map.has(diag) and is_instance_valid(elements_map[diag]) and not elements_map[diag].allows_falling
 						if not diag_blocked and types[diag.x][diag.y] != EMPTY_TYPE:
