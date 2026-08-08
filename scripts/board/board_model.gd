@@ -26,6 +26,7 @@ signal level_failed
 signal board_reshuffled
 signal log_event(message: String)
 signal special_items_spawned
+signal objective_updated(remaining: Dictionary)
 
 var width: int
 var height: int
@@ -39,6 +40,7 @@ var moves_remaining: int
 var score: int = 0
 var objective: int
 var target_objectives_remaining: Dictionary = {}
+var _has_gimmick_objective: bool = false
 var is_busy: bool = false
 var _rng := RandomNumberGenerator.new()
 
@@ -62,6 +64,7 @@ func _init(level_data: LevelData, rng_seed: int = -1) -> void:
 	moves_remaining = level_data.move_limit
 	objective = level_data.objective
 	target_objectives_remaining = level_data.target_objectives.duplicate()
+	_has_gimmick_objective = not target_objectives_remaining.is_empty()
 
 	# 1. Fill default random tiles (reroll until no initial matches)
 	_fill_random_grid()
@@ -198,6 +201,7 @@ func _on_element_damaged(element: BaseElement, current_hp: int) -> void:
 			if target_objectives_remaining[obj_key] <= 0:
 				target_objectives_remaining.erase(obj_key)
 				_close_all_birdhouses()
+			objective_updated.emit(target_objectives_remaining.duplicate())
 
 func _close_all_birdhouses() -> void:
 	for cell in elements_map.keys():
@@ -213,6 +217,7 @@ func _on_element_destroyed(element: BaseElement) -> void:
 			target_objectives_remaining[element.element_id] = max(0, target_objectives_remaining[element.element_id] - 1)
 			if target_objectives_remaining[element.element_id] <= 0:
 				target_objectives_remaining.erase(element.element_id)
+			objective_updated.emit(target_objectives_remaining.duplicate())
 
 	if element != null:
 		var pos = element.grid_position
@@ -567,8 +572,9 @@ func _consume_move() -> void:
 	move_consumed.emit(moves_remaining)
 
 func _check_game_over() -> void:
-	if score >= objective:
-		log_event.emit("[게임 완료] 목표 달성! 🎉 (최종 점수: %d점)" % score)
+	var cleared: bool = is_objective_completed() if _has_gimmick_objective else score >= objective
+	if cleared:
+		log_event.emit("[게임 완료] 목표 기믹 달성! 🎉 (최종 점수: %d점)" % score)
 		level_completed.emit()
 	elif moves_remaining <= 0:
 		log_event.emit("[게임 실패] 남은 이동 횟수 소진! 😢")

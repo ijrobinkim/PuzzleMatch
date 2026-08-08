@@ -4,45 +4,29 @@
 
 [resource]
 script = ExtResource("1")
-level_id = "level_004"
+level_id = "level_006"
 grid_width = 8
 grid_height = 8
 tile_type_count = 5
 move_limit = 25
-objective = 1500
+objective = 2000
 target_objectives = {
-"snow": 8
+"column": 4
 }
 initial_elements = [{
-"id": "snow",
+"id": "column",
+"x": 2,
+"y": 1
+}, {
+"id": "column",
 "x": 2,
 "y": 2
 }, {
-"id": "snow",
-"x": 3,
-"y": 2
+"id": "column",
+"x": 5,
+"y": 1
 }, {
-"id": "snow",
-"x": 4,
-"y": 2
-}, {
-"id": "snow",
+"id": "column",
 "x": 5,
 "y": 2
-}, {
-"id": "snow",
-"x": 2,
-"y": 5
-}, {
-"id": "snow",
-"x": 3,
-"y": 5
-}, {
-"id": "snow",
-"x": 4,
-"y": 5
-}, {
-"id": "snow",
-"x": 5,
-"y": 5
 }]

@@ -3,14 +3,31 @@ extends CanvasLayer
 
 signal restart_requested
 signal spawn_specials_requested
+signal next_stage_requested
 
 const KOREAN_FONT: Font = preload("res://assets/fonts/malgun.ttf")
 
+const OBJECTIVE_ICONS := {
+	"box": "📦",
+	"snow": "❄️",
+	"ivy": "🌿",
+	"column": "🏛️",
+	"birdhouse": "🐦",
+	"bird": "🐦",
+	"steam_bomb": "💣",
+	"dragon_box": "🐉",
+	"trophy_cabinet": "🏆",
+}
+
 @onready var version_label: Label = $TopCenter/VersionPanel/VersionLabel
+@onready var objective_hbox: HBoxContainer = get_node_or_null("TopCenter/ObjectivePanel/ObjectiveHBox")
 @onready var scroll_container: ScrollContainer = $BottomFull/LogPanel/MarginContainer/ScrollContainer
 @onready var log_vbox: VBoxContainer = $BottomFull/LogPanel/MarginContainer/ScrollContainer/LogVBox
 @onready var restart_button: Button = get_node_or_null("TopRight/RestartButton")
 @onready var spawn_specials_button: Button = get_node_or_null("TopRight/SpawnSpecialsButton")
+var next_stage_button: Button
+
+var _objective_totals: Dictionary = {}
 
 var speed_button: Button
 var current_speed_step := 0 # 0: 1.0x, 1: 1.5x, 2: 2.0x
@@ -21,12 +38,45 @@ const MAX_LOG_LINES := 50
 func _ready() -> void:
 	if version_label:
 		version_label.add_theme_font_override("font", KOREAN_FONT)
-		version_label.text = "v" + GameManager.GAME_VERSION
+		version_label.text = "STAGE 1 / 30  (v" + GameManager.GAME_VERSION + ")"
 	_setup_restart_button()
 	_setup_spawn_specials_button()
+	_setup_next_stage_button()
 	_setup_speed_button()
 	EventBus.log_emitted.connect(_on_log_emitted)
+	EventBus.objective_progress_changed.connect(_on_objective_progress_changed)
 	_add_log_line("🎮 게임 시작! (버전 v" + GameManager.GAME_VERSION + ")")
+
+func _on_objective_progress_changed(totals: Dictionary, remaining: Dictionary) -> void:
+	_objective_totals = totals
+	_refresh_objective_display(remaining)
+
+func _refresh_objective_display(remaining: Dictionary) -> void:
+	if objective_hbox == null:
+		return
+	for child in objective_hbox.get_children():
+		objective_hbox.remove_child(child)
+		child.queue_free()
+
+	for key in _objective_totals.keys():
+		var total: int = _objective_totals[key]
+		var left: int = int(remaining.get(key, 0))
+		var icon: String = OBJECTIVE_ICONS.get(key, "🎯")
+
+		var label := Label.new()
+		label.add_theme_font_override("font", KOREAN_FONT)
+		label.add_theme_font_size_override("font_size", 22)
+		if left <= 0:
+			label.text = "%s ✅" % icon
+			label.add_theme_color_override("font_color", Color(0.55, 1.0, 0.55))
+		else:
+			label.text = "%s %d/%d" % [icon, left, total]
+		objective_hbox.add_child(label)
+
+func set_stage_info(stage_idx: int, max_stages: int = 30) -> void:
+	if version_label:
+		version_label.add_theme_font_override("font", KOREAN_FONT)
+		version_label.text = "STAGE %d / %d  (v%s)" % [stage_idx, max_stages, GameManager.GAME_VERSION]
 
 func _setup_restart_button() -> void:
 	if restart_button == null:
@@ -94,6 +144,42 @@ func _setup_spawn_specials_button() -> void:
 	if not spawn_specials_button.pressed.is_connected(_on_spawn_specials_button_pressed):
 		spawn_specials_button.pressed.connect(_on_spawn_specials_button_pressed)
 
+func _setup_next_stage_button() -> void:
+	next_stage_button = get_node_or_null("TopRight/NextStageButton")
+	if next_stage_button == null:
+		next_stage_button = Button.new()
+		next_stage_button.name = "NextStageButton"
+		var top_right := get_node_or_null("TopRight")
+		if top_right:
+			top_right.add_child(next_stage_button)
+		else:
+			add_child(next_stage_button)
+
+	next_stage_button.add_theme_font_override("font", KOREAN_FONT)
+	next_stage_button.add_theme_font_size_override("font_size", 16)
+	next_stage_button.text = "▶️ 다음 스테이지"
+
+	var style_normal := StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.15, 0.12, 0.25, 0.88)
+	style_normal.border_color = Color(0.65, 0.5, 1.0, 0.95)
+	style_normal.set_border_width_all(2)
+	style_normal.set_corner_radius_all(10)
+	style_normal.shadow_color = Color(0, 0, 0, 0.4)
+	style_normal.shadow_size = 4
+
+	var style_hover := StyleBoxFlat.new()
+	style_hover.bg_color = Color(0.25, 0.2, 0.4, 0.95)
+	style_hover.border_color = Color(0.8, 0.7, 1.0, 1.0)
+	style_hover.set_border_width_all(2)
+	style_hover.set_corner_radius_all(10)
+
+	next_stage_button.add_theme_stylebox_override("normal", style_normal)
+	next_stage_button.add_theme_stylebox_override("hover", style_hover)
+	next_stage_button.add_theme_color_override("font_color", Color(0.9, 0.85, 1.0))
+
+	if not next_stage_button.pressed.is_connected(_on_next_stage_button_pressed):
+		next_stage_button.pressed.connect(_on_next_stage_button_pressed)
+
 func _setup_speed_button() -> void:
 	speed_button = get_node_or_null("TopRight/SpeedButton")
 	if speed_button == null:
@@ -160,6 +246,9 @@ func _update_speed_button_ui() -> void:
 
 func _on_spawn_specials_button_pressed() -> void:
 	spawn_specials_requested.emit()
+
+func _on_next_stage_button_pressed() -> void:
+	next_stage_requested.emit()
 
 func _on_restart_button_pressed() -> void:
 	restart_requested.emit()

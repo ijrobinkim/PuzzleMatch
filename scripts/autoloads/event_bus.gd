@@ -8,6 +8,7 @@ signal move_used(moves_remaining: int)
 signal level_started(level_id: String)
 signal level_completed(level_id: String, stars: int)
 signal level_failed(level_id: String)
+signal objective_progress_changed(totals: Dictionary, remaining: Dictionary)
 
 signal currency_changed(currency_id: String, new_amount: int)
 signal renovation_task_completed(task_id: String)

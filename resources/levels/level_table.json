@@ -1,0 +1,1847 @@
+[
+    {
+        "level_id": "level_001",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 1000,
+        "target_objectives": {
+            "box": 4
+        },
+        "initial_elements": [
+            {
+                "id": "box",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_002",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 24,
+        "objective": 1200,
+        "target_objectives": {
+            "box": 8
+        },
+        "initial_elements": [
+            {
+                "id": "box",
+                "x": 1,
+                "y": 1
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 1
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 6
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 6
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 4
+            }
+        ]
+    },
+    {
+        "level_id": "level_003",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 1500,
+        "target_objectives": {
+            "box": 12
+        },
+        "initial_elements": [
+            {
+                "id": "box",
+                "x": 1,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 4
+            }
+        ]
+    },
+    {
+        "level_id": "level_004",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 1500,
+        "target_objectives": {
+            "snow": 8
+        },
+        "initial_elements": [
+            {
+                "id": "snow",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 5,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_005",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 26,
+        "objective": 1800,
+        "target_objectives": {
+            "box": 6,
+            "snow": 6
+        },
+        "initial_elements": [
+            {
+                "id": "box",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 1,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 5,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_006",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 2000,
+        "target_objectives": {
+            "column": 4
+        },
+        "initial_elements": [
+            {
+                "id": "column",
+                "x": 2,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "column",
+                "x": 5,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 5,
+                "y": 2
+            }
+        ]
+    },
+    {
+        "level_id": "level_007",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 26,
+        "objective": 2200,
+        "target_objectives": {
+            "column": 6,
+            "box": 6
+        },
+        "initial_elements": [
+            {
+                "id": "column",
+                "x": 3,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_008",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 2000,
+        "target_objectives": {
+            "ivy": 4
+        },
+        "initial_elements": [
+            {
+                "id": "ivy",
+                "x": 1,
+                "y": 1
+            },
+            {
+                "id": "ivy",
+                "x": 6,
+                "y": 1
+            },
+            {
+                "id": "ivy",
+                "x": 1,
+                "y": 6
+            },
+            {
+                "id": "ivy",
+                "x": 6,
+                "y": 6
+            }
+        ]
+    },
+    {
+        "level_id": "level_009",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 26,
+        "objective": 2400,
+        "target_objectives": {
+            "ivy": 6,
+            "column": 4
+        },
+        "initial_elements": [
+            {
+                "id": "ivy",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "ivy",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "ivy",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "ivy",
+                "x": 5,
+                "y": 5
+            },
+            {
+                "id": "ivy",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "ivy",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "column",
+                "x": 1,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "column",
+                "x": 6,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 6,
+                "y": 2
+            }
+        ]
+    },
+    {
+        "level_id": "level_010",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 28,
+        "objective": 3000,
+        "target_objectives": {
+            "box": 8,
+            "ivy": 4,
+            "column": 4
+        },
+        "initial_elements": [
+            {
+                "id": "column",
+                "x": 2,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 2,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 5,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 5,
+                "y": 1
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 5
+            },
+            {
+                "id": "ivy",
+                "x": 0,
+                "y": 3
+            },
+            {
+                "id": "ivy",
+                "x": 7,
+                "y": 3
+            },
+            {
+                "id": "ivy",
+                "x": 0,
+                "y": 4
+            },
+            {
+                "id": "ivy",
+                "x": 7,
+                "y": 4
+            }
+        ]
+    },
+    {
+        "level_id": "level_011",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 2500,
+        "target_objectives": {
+            "bird": 6
+        },
+        "initial_elements": [
+            {
+                "id": "birdhouse",
+                "x": 2,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 5,
+                "y": 3
+            }
+        ]
+    },
+    {
+        "level_id": "level_012",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 26,
+        "objective": 2800,
+        "target_objectives": {
+            "bird": 9,
+            "box": 6
+        },
+        "initial_elements": [
+            {
+                "id": "birdhouse",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_013",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 28,
+        "objective": 3000,
+        "target_objectives": {
+            "bird": 12,
+            "snow": 8
+        },
+        "initial_elements": [
+            {
+                "id": "birdhouse",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "birdhouse",
+                "x": 5,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 4
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_014",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 27,
+        "objective": 3200,
+        "target_objectives": {
+            "bird": 8,
+            "column": 6
+        },
+        "initial_elements": [
+            {
+                "id": "birdhouse",
+                "x": 2,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 5,
+                "y": 3
+            },
+            {
+                "id": "column",
+                "x": 2,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 2,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "column",
+                "x": 5,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 5,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 5,
+                "y": 2
+            }
+        ]
+    },
+    {
+        "level_id": "level_015",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 30,
+        "objective": 3500,
+        "target_objectives": {
+            "bird": 12,
+            "box": 8,
+            "ivy": 4
+        },
+        "initial_elements": [
+            {
+                "id": "birdhouse",
+                "x": 1,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 6,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 4
+            },
+            {
+                "id": "ivy",
+                "x": 0,
+                "y": 1
+            },
+            {
+                "id": "ivy",
+                "x": 7,
+                "y": 1
+            },
+            {
+                "id": "ivy",
+                "x": 0,
+                "y": 6
+            },
+            {
+                "id": "ivy",
+                "x": 7,
+                "y": 6
+            }
+        ]
+    },
+    {
+        "level_id": "level_016",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 22,
+        "objective": 2500,
+        "target_objectives": {
+            "steam_bomb": 2
+        },
+        "initial_elements": [
+            {
+                "id": "steam_bomb",
+                "x": 3,
+                "y": 3,
+                "turns": 12
+            },
+            {
+                "id": "steam_bomb",
+                "x": 4,
+                "y": 3,
+                "turns": 12
+            }
+        ]
+    },
+    {
+        "level_id": "level_017",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 24,
+        "objective": 2800,
+        "target_objectives": {
+            "steam_bomb": 3,
+            "box": 6
+        },
+        "initial_elements": [
+            {
+                "id": "steam_bomb",
+                "x": 2,
+                "y": 2,
+                "turns": 14
+            },
+            {
+                "id": "steam_bomb",
+                "x": 5,
+                "y": 2,
+                "turns": 14
+            },
+            {
+                "id": "steam_bomb",
+                "x": 3,
+                "y": 5,
+                "turns": 14
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_018",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 3000,
+        "target_objectives": {
+            "steam_bomb": 4,
+            "column": 4
+        },
+        "initial_elements": [
+            {
+                "id": "steam_bomb",
+                "x": 1,
+                "y": 3,
+                "turns": 15
+            },
+            {
+                "id": "steam_bomb",
+                "x": 2,
+                "y": 3,
+                "turns": 15
+            },
+            {
+                "id": "steam_bomb",
+                "x": 5,
+                "y": 3,
+                "turns": 15
+            },
+            {
+                "id": "steam_bomb",
+                "x": 6,
+                "y": 3,
+                "turns": 15
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 2
+            }
+        ]
+    },
+    {
+        "level_id": "level_019",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 26,
+        "objective": 3200,
+        "target_objectives": {
+            "steam_bomb": 3,
+            "bird": 6
+        },
+        "initial_elements": [
+            {
+                "id": "steam_bomb",
+                "x": 3,
+                "y": 2,
+                "turns": 15
+            },
+            {
+                "id": "steam_bomb",
+                "x": 4,
+                "y": 2,
+                "turns": 15
+            },
+            {
+                "id": "steam_bomb",
+                "x": 3,
+                "y": 5,
+                "turns": 15
+            },
+            {
+                "id": "birdhouse",
+                "x": 1,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 6,
+                "y": 3
+            }
+        ]
+    },
+    {
+        "level_id": "level_020",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 28,
+        "objective": 4000,
+        "target_objectives": {
+            "steam_bomb": 4,
+            "box": 8,
+            "snow": 6
+        },
+        "initial_elements": [
+            {
+                "id": "steam_bomb",
+                "x": 2,
+                "y": 2,
+                "turns": 16
+            },
+            {
+                "id": "steam_bomb",
+                "x": 5,
+                "y": 2,
+                "turns": 16
+            },
+            {
+                "id": "steam_bomb",
+                "x": 2,
+                "y": 5,
+                "turns": 16
+            },
+            {
+                "id": "steam_bomb",
+                "x": 5,
+                "y": 5,
+                "turns": 16
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 3
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 4
+            },
+            {
+                "id": "snow",
+                "x": 1,
+                "y": 1
+            },
+            {
+                "id": "snow",
+                "x": 6,
+                "y": 1
+            },
+            {
+                "id": "snow",
+                "x": 1,
+                "y": 6
+            },
+            {
+                "id": "snow",
+                "x": 6,
+                "y": 6
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 4
+            }
+        ]
+    },
+    {
+        "level_id": "level_021",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 3000,
+        "target_objectives": {
+            "dragon_box": 2
+        },
+        "initial_elements": [
+            {
+                "id": "dragon_box",
+                "x": 2,
+                "y": 3
+            },
+            {
+                "id": "dragon_box",
+                "x": 5,
+                "y": 3
+            }
+        ]
+    },
+    {
+        "level_id": "level_022",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 26,
+        "objective": 3300,
+        "target_objectives": {
+            "dragon_box": 3,
+            "box": 6
+        },
+        "initial_elements": [
+            {
+                "id": "dragon_box",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "dragon_box",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "dragon_box",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_023",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 25,
+        "objective": 3500,
+        "target_objectives": {
+            "trophy_cabinet": 1
+        },
+        "initial_elements": [
+            {
+                "id": "trophy_cabinet",
+                "x": 3,
+                "y": 3
+            }
+        ]
+    },
+    {
+        "level_id": "level_024",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 28,
+        "objective": 4000,
+        "target_objectives": {
+            "trophy_cabinet": 2,
+            "dragon_box": 2
+        },
+        "initial_elements": [
+            {
+                "id": "trophy_cabinet",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "trophy_cabinet",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "dragon_box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "dragon_box",
+                "x": 5,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_025",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 30,
+        "objective": 4500,
+        "target_objectives": {
+            "trophy_cabinet": 2,
+            "box": 8,
+            "snow": 8
+        },
+        "initial_elements": [
+            {
+                "id": "trophy_cabinet",
+                "x": 1,
+                "y": 1
+            },
+            {
+                "id": "trophy_cabinet",
+                "x": 5,
+                "y": 1
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 1,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 6,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 3
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 3
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 4
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 6
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 6
+            }
+        ]
+    },
+    {
+        "level_id": "level_026",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 28,
+        "objective": 4200,
+        "target_objectives": {
+            "column": 6,
+            "bird": 9,
+            "steam_bomb": 2
+        },
+        "initial_elements": [
+            {
+                "id": "column",
+                "x": 3,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 1,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 6,
+                "y": 3
+            },
+            {
+                "id": "birdhouse",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "steam_bomb",
+                "x": 2,
+                "y": 4,
+                "turns": 14
+            },
+            {
+                "id": "steam_bomb",
+                "x": 5,
+                "y": 4,
+                "turns": 14
+            }
+        ]
+    },
+    {
+        "level_id": "level_027",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 30,
+        "objective": 4800,
+        "target_objectives": {
+            "dragon_box": 2,
+            "ivy": 6,
+            "box": 8
+        },
+        "initial_elements": [
+            {
+                "id": "dragon_box",
+                "x": 2,
+                "y": 2
+            },
+            {
+                "id": "dragon_box",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "ivy",
+                "x": 0,
+                "y": 2
+            },
+            {
+                "id": "ivy",
+                "x": 7,
+                "y": 2
+            },
+            {
+                "id": "ivy",
+                "x": 0,
+                "y": 5
+            },
+            {
+                "id": "ivy",
+                "x": 7,
+                "y": 5
+            },
+            {
+                "id": "ivy",
+                "x": 3,
+                "y": 6
+            },
+            {
+                "id": "ivy",
+                "x": 4,
+                "y": 6
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 4
+            },
+            {
+                "id": "box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 4,
+                "y": 5
+            },
+            {
+                "id": "box",
+                "x": 5,
+                "y": 5
+            }
+        ]
+    },
+    {
+        "level_id": "level_028",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 30,
+        "objective": 5000,
+        "target_objectives": {
+            "trophy_cabinet": 2,
+            "steam_bomb": 3,
+            "column": 4
+        },
+        "initial_elements": [
+            {
+                "id": "trophy_cabinet",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "trophy_cabinet",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "steam_bomb",
+                "x": 3,
+                "y": 4,
+                "turns": 15
+            },
+            {
+                "id": "steam_bomb",
+                "x": 4,
+                "y": 4,
+                "turns": 15
+            },
+            {
+                "id": "steam_bomb",
+                "x": 3,
+                "y": 6,
+                "turns": 15
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 1
+            }
+        ]
+    },
+    {
+        "level_id": "level_029",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 32,
+        "objective": 5500,
+        "target_objectives": {
+            "bird": 15,
+            "dragon_box": 3,
+            "snow": 10
+        },
+        "initial_elements": [
+            {
+                "id": "birdhouse",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 3,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 4,
+                "y": 2
+            },
+            {
+                "id": "birdhouse",
+                "x": 6,
+                "y": 2
+            },
+            {
+                "id": "dragon_box",
+                "x": 2,
+                "y": 4
+            },
+            {
+                "id": "dragon_box",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "dragon_box",
+                "x": 5,
+                "y": 4
+            },
+            {
+                "id": "snow",
+                "x": 0,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 1,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 5,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 6,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 7,
+                "y": 5
+            },
+            {
+                "id": "snow",
+                "x": 2,
+                "y": 6
+            },
+            {
+                "id": "snow",
+                "x": 3,
+                "y": 6
+            },
+            {
+                "id": "snow",
+                "x": 4,
+                "y": 6
+            },
+            {
+                "id": "snow",
+                "x": 5,
+                "y": 6
+            }
+        ]
+    },
+    {
+        "level_id": "level_030",
+        "grid_width": 8,
+        "grid_height": 8,
+        "tile_type_count": 5,
+        "move_limit": 35,
+        "objective": 6000,
+        "target_objectives": {
+            "trophy_cabinet": 2,
+            "dragon_box": 2,
+            "steam_bomb": 3,
+            "column": 4,
+            "bird": 9
+        },
+        "initial_elements": [
+            {
+                "id": "trophy_cabinet",
+                "x": 1,
+                "y": 2
+            },
+            {
+                "id": "trophy_cabinet",
+                "x": 5,
+                "y": 2
+            },
+            {
+                "id": "dragon_box",
+                "x": 2,
+                "y": 5
+            },
+            {
+                "id": "dragon_box",
+                "x": 5,
+                "y": 5
+            },
+            {
+                "id": "birdhouse",
+                "x": 3,
+                "y": 4
+            },
+            {
+                "id": "birdhouse",
+                "x": 4,
+                "y": 4
+            },
+            {
+                "id": "birdhouse",
+                "x": 3,
+                "y": 5
+            },
+            {
+                "id": "steam_bomb",
+                "x": 1,
+                "y": 5,
+                "turns": 18
+            },
+            {
+                "id": "steam_bomb",
+                "x": 6,
+                "y": 5,
+                "turns": 18
+            },
+            {
+                "id": "steam_bomb",
+                "x": 3,
+                "y": 6,
+                "turns": 18
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 3,
+                "y": 1
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 0
+            },
+            {
+                "id": "column",
+                "x": 4,
+                "y": 1
+            }
+        ]
+    }
+]

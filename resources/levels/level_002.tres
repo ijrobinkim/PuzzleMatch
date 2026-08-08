@@ -8,8 +8,8 @@ level_id = "level_002"
 grid_width = 8
 grid_height = 8
 tile_type_count = 5
-move_limit = 22
-objective = 800
+move_limit = 24
+objective = 1200
 target_objectives = {
 "box": 8
 }

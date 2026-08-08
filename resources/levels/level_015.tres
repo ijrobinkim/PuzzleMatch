@@ -4,54 +4,44 @@
 
 [resource]
 script = ExtResource("1")
-level_id = "level_003"
+level_id = "level_015"
 grid_width = 8
 grid_height = 8
 tile_type_count = 5
-move_limit = 25
-objective = 1500
+move_limit = 30
+objective = 3500
 target_objectives = {
-"box": 12
+"bird": 12,
+"box": 8,
+"ivy": 4
 }
 initial_elements = [{
-"id": "box",
+"id": "birdhouse",
 "x": 1,
 "y": 3
 }, {
-"id": "box",
-"x": 2,
-"y": 3
-}, {
-"id": "box",
+"id": "birdhouse",
 "x": 3,
 "y": 3
 }, {
-"id": "box",
+"id": "birdhouse",
 "x": 4,
 "y": 3
 }, {
-"id": "box",
-"x": 5,
-"y": 3
-}, {
-"id": "box",
+"id": "birdhouse",
 "x": 6,
 "y": 3
 }, {
 "id": "box",
-"x": 1,
-"y": 4
+"x": 2,
+"y": 2
+}, {
+"id": "box",
+"x": 5,
+"y": 2
 }, {
 "id": "box",
 "x": 2,
-"y": 4
-}, {
-"id": "box",
-"x": 3,
-"y": 4
-}, {
-"id": "box",
-"x": 4,
 "y": 4
 }, {
 "id": "box",
@@ -59,6 +49,34 @@ initial_elements = [{
 "y": 4
 }, {
 "id": "box",
+"x": 1,
+"y": 2
+}, {
+"id": "box",
+"x": 6,
+"y": 2
+}, {
+"id": "box",
+"x": 1,
+"y": 4
+}, {
+"id": "box",
 "x": 6,
 "y": 4
+}, {
+"id": "ivy",
+"x": 0,
+"y": 1
+}, {
+"id": "ivy",
+"x": 7,
+"y": 1
+}, {
+"id": "ivy",
+"x": 0,
+"y": 6
+}, {
+"id": "ivy",
+"x": 7,
+"y": 6
 }]

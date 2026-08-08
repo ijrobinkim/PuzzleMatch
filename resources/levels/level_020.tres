@@ -4,31 +4,48 @@
 
 [resource]
 script = ExtResource("1")
-level_id = "level_005"
+level_id = "level_020"
 grid_width = 8
 grid_height = 8
 tile_type_count = 5
-move_limit = 26
-objective = 1800
+move_limit = 28
+objective = 4000
 target_objectives = {
-"box": 6,
+"steam_bomb": 4,
+"box": 8,
 "snow": 6
 }
 initial_elements = [{
-"id": "box",
-"x": 1,
-"y": 2
+"id": "steam_bomb",
+"x": 2,
+"y": 2,
+"turns": 16
+}, {
+"id": "steam_bomb",
+"x": 5,
+"y": 2,
+"turns": 16
+}, {
+"id": "steam_bomb",
+"x": 2,
+"y": 5,
+"turns": 16
+}, {
+"id": "steam_bomb",
+"x": 5,
+"y": 5,
+"turns": 16
 }, {
 "id": "box",
 "x": 3,
 "y": 2
 }, {
 "id": "box",
-"x": 5,
+"x": 4,
 "y": 2
 }, {
 "id": "box",
-"x": 2,
+"x": 3,
 "y": 5
 }, {
 "id": "box",
@@ -36,30 +53,42 @@ initial_elements = [{
 "y": 5
 }, {
 "id": "box",
-"x": 6,
-"y": 5
-}, {
-"id": "snow",
 "x": 2,
-"y": 2
+"y": 3
 }, {
-"id": "snow",
-"x": 4,
-"y": 2
+"id": "box",
+"x": 2,
+"y": 4
 }, {
-"id": "snow",
-"x": 6,
-"y": 2
+"id": "box",
+"x": 5,
+"y": 3
+}, {
+"id": "box",
+"x": 5,
+"y": 4
 }, {
 "id": "snow",
 "x": 1,
-"y": 5
+"y": 1
+}, {
+"id": "snow",
+"x": 6,
+"y": 1
+}, {
+"id": "snow",
+"x": 1,
+"y": 6
+}, {
+"id": "snow",
+"x": 6,
+"y": 6
 }, {
 "id": "snow",
 "x": 3,
-"y": 5
+"y": 4
 }, {
 "id": "snow",
-"x": 5,
-"y": 5
+"x": 4,
+"y": 4
 }]

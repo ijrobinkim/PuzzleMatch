@@ -4,61 +4,50 @@
 
 [resource]
 script = ExtResource("1")
-level_id = "level_003"
+level_id = "level_018"
 grid_width = 8
 grid_height = 8
 tile_type_count = 5
 move_limit = 25
-objective = 1500
+objective = 3000
 target_objectives = {
-"box": 12
+"steam_bomb": 4,
+"column": 4
 }
 initial_elements = [{
-"id": "box",
+"id": "steam_bomb",
 "x": 1,
-"y": 3
+"y": 3,
+"turns": 15
 }, {
-"id": "box",
+"id": "steam_bomb",
 "x": 2,
-"y": 3
+"y": 3,
+"turns": 15
 }, {
-"id": "box",
-"x": 3,
-"y": 3
-}, {
-"id": "box",
-"x": 4,
-"y": 3
-}, {
-"id": "box",
+"id": "steam_bomb",
 "x": 5,
-"y": 3
+"y": 3,
+"turns": 15
 }, {
-"id": "box",
+"id": "steam_bomb",
 "x": 6,
-"y": 3
+"y": 3,
+"turns": 15
 }, {
-"id": "box",
-"x": 1,
-"y": 4
-}, {
-"id": "box",
-"x": 2,
-"y": 4
-}, {
-"id": "box",
+"id": "column",
 "x": 3,
-"y": 4
+"y": 1
 }, {
-"id": "box",
+"id": "column",
+"x": 3,
+"y": 2
+}, {
+"id": "column",
 "x": 4,
-"y": 4
+"y": 1
 }, {
-"id": "box",
-"x": 5,
-"y": 4
-}, {
-"id": "box",
-"x": 6,
-"y": 4
+"id": "column",
+"x": 4,
+"y": 2
 }]

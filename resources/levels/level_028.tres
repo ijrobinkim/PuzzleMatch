@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="LevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/level_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+level_id = "level_028"
+grid_width = 8
+grid_height = 8
+tile_type_count = 5
+move_limit = 30
+objective = 5000
+target_objectives = {
+"trophy_cabinet": 2,
+"steam_bomb": 3,
+"column": 4
+}
+initial_elements = [{
+"id": "trophy_cabinet",
+"x": 1,
+"y": 2
+}, {
+"id": "trophy_cabinet",
+"x": 5,
+"y": 2
+}, {
+"id": "steam_bomb",
+"x": 3,
+"y": 4,
+"turns": 15
+}, {
+"id": "steam_bomb",
+"x": 4,
+"y": 4,
+"turns": 15
+}, {
+"id": "steam_bomb",
+"x": 3,
+"y": 6,
+"turns": 15
+}, {
+"id": "column",
+"x": 3,
+"y": 0
+}, {
+"id": "column",
+"x": 3,
+"y": 1
+}, {
+"id": "column",
+"x": 4,
+"y": 0
+}, {
+"id": "column",
+"x": 4,
+"y": 1
+}]

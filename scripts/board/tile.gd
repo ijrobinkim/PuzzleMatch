@@ -1,6 +1,12 @@
 class_name Tile
 extends Node2D
 
+const BREAK_SFX: Array[AudioStream] = [
+	preload("res://assets/sound/sfx/block_pop1.wav"),
+	preload("res://assets/sound/sfx/block_pop2.wav"),
+	preload("res://assets/sound/sfx/block_pop3.wav"),
+]
+
 var visual: Node2D
 var sprite: Sprite2D
 var bonus_overlay: Sprite2D
@@ -181,6 +187,7 @@ func animate_clear(duration: float = 0.35) -> Tween:
 	stop_animations()
 	_ensure_nodes()
 	_spawn_break_particles()
+	AudioManager.play_sfx(BREAK_SFX[randi() % BREAK_SFX.size()])
 	is_destroying = true
 	if not is_inside_tree():
 		if visual: visual.scale = Vector2.ZERO

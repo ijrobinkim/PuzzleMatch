@@ -20,6 +20,17 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_objective"]
+bg_color = Color(0.1, 0.1, 0.15, 0.75)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+expand_margin_left = 14.0
+expand_margin_top = 6.0
+expand_margin_right = 14.0
+expand_margin_bottom = 6.0
+
 [node name="GameHUD" type="CanvasLayer" unique_id=1690111287]
 layer = 10
 script = ExtResource("1")
@@ -53,6 +64,23 @@ theme_override_font_sizes/font_size = 24
 text = "v0.0.1.4"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="ObjectivePanel" type="PanelContainer" parent="TopCenter"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = -46.0
+offset_right = 200.0
+offset_bottom = -6.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_objective")
+
+[node name="ObjectiveHBox" type="HBoxContainer" parent="TopCenter/ObjectivePanel"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 16
 
 [node name="BottomFull" type="Control" parent="." unique_id=188067604]
 layout_mode = 3

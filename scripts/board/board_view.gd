@@ -1,6 +1,8 @@
 class_name BoardView
 extends Node2D
 
+signal animations_finished
+
 const CELL_SIZE := 128.0
 const TILE_SCENE: PackedScene = preload("res://scenes/board/tile.tscn")
 
@@ -18,6 +20,7 @@ var _pending_steps: Array = []
 var _pending_user_inputs: Array = []
 var _is_animating: bool = false
 var _active_swap_tween: Tween
+var _input_locked: bool = false
 
 var _current_hint_target: Dictionary = {}
 var _current_hint_index: int = 0
@@ -87,6 +90,17 @@ class HintOutlineDrawer extends Node2D:
 			draw_line(seg[0], seg[1], line_color, line_width, true)
 
 func _cleanup_board() -> void:
+	_cancel_hint_timers()
+	_pending_steps.clear()
+	_pending_user_inputs.clear()
+	_is_animating = false
+	_selected_cell = Vector2i(-1, -1)
+	_drag_start_cell = Vector2i(-1, -1)
+	_input_locked = false
+	if _active_swap_tween and _active_swap_tween.is_valid():
+		_active_swap_tween.kill()
+	_active_swap_tween = null
+
 	for tile in _cell_to_tile.values():
 		if is_instance_valid(tile):
 			tile.reset()
@@ -122,6 +136,8 @@ func _bind_model_signals(level_data: LevelData) -> void:
 	model.move_consumed.connect(func(remaining: int): EventBus.move_used.emit(remaining))
 	model.level_completed.connect(func(): EventBus.level_completed.emit(level_data.level_id, 3))
 	model.level_failed.connect(func(): EventBus.level_failed.emit(level_data.level_id))
+	model.objective_updated.connect(func(remaining: Dictionary): EventBus.objective_progress_changed.emit(level_data.target_objectives, remaining))
+	EventBus.objective_progress_changed.emit(level_data.target_objectives, model.target_objectives_remaining)
 	model.board_reshuffled.connect(func():
 		_current_hint_target = {}
 		EventBus.board_shuffled.emit()
@@ -211,7 +227,7 @@ func _enqueue_user_input(input_action: Dictionary) -> void:
 		_pending_user_inputs.append(input_action)
 
 func _process_pending_user_inputs() -> void:
-	if _pending_user_inputs.is_empty() or _is_animating or model == null or model.is_busy:
+	if _pending_user_inputs.is_empty() or _is_animating or model == null or model.is_busy or _input_locked:
 		return
 	var cmd: Dictionary = _pending_user_inputs.pop_front()
 	var type: String = cmd.get("type", "")
@@ -229,7 +245,7 @@ func _process_pending_user_inputs() -> void:
 				model.activate_special_tile(cell)
 
 func _perform_user_swap(a: Vector2i, b: Vector2i) -> void:
-	if model == null:
+	if model == null or _input_locked:
 		return
 	if not model.is_in_bounds(a) or not model.is_in_bounds(b):
 		return
@@ -328,7 +344,7 @@ func _on_swap_rejected(a: Vector2i, b: Vector2i) -> void:
 	_cancel_hint_timers()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if model == null:
+	if model == null or _input_locked:
 		return
 	if event is InputEventScreenTouch or event is InputEventMouseButton:
 		var pressed: bool = event.is_pressed() if event is InputEventScreenTouch else (event as InputEventMouseButton).pressed
@@ -691,12 +707,13 @@ func _process_cascade_pipeline() -> void:
 			return delay + fall_duration + bounce_duration + recover_duration
 
 		for fall in step["falls"]:
-			# Check if this fall is driven by a gimmick element (e.g. a column sliding down).
-			# If so, do NOT move the gem tile — only animate the gimmick node.
-			# Moving an invisible EMPTY_TYPE tile from a column cell corrupts _cell_to_tile
-			# and causes refill tiles to go missing or appear blank.
+			# Check if this fall is driven by a gimmick element that actually moves its own
+			# grid_position in the model (currently only "column" — see board_model.gd
+			# _apply_gravity's column-collapse branch). Field-layer elements like snow/ivy
+			# stay bound to their cell while the gem underneath falls/refills normally, so
+			# they must NOT be dragged along with the tile's fall animation.
 			var elem = _element_nodes.get(fall["from"])
-			var is_gimmick_fall := elem != null and is_instance_valid(elem)
+			var is_gimmick_fall: bool = elem != null and is_instance_valid(elem) and elem.element_id == "column"
 			
 			if not is_gimmick_fall:
 				var tile: Tile = _cell_to_tile.get(fall["from"])
@@ -793,6 +810,19 @@ func _process_cascade_pipeline() -> void:
 		_current_hint_target = {}
 	_schedule_hint_timer()
 	_process_pending_user_inputs()
+
+	if not is_animating():
+		animations_finished.emit()
+
+func is_animating() -> bool:
+	return _is_animating or not _pending_steps.is_empty()
+
+func set_input_locked(locked: bool) -> void:
+	_input_locked = locked
+	if locked:
+		_drag_start_cell = Vector2i(-1, -1)
+		_selected_cell = Vector2i(-1, -1)
+		_pending_user_inputs.clear()
 
 func _schedule_hint_timer() -> void:
 	_cancel_hint_timers()
