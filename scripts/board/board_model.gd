@@ -173,6 +173,7 @@ func _on_element_destroyed(element: BaseElement) -> void:
 
 	if element != null:
 		var pos = element.grid_position
+		log_event.emit("[기믹 파괴] %s (%d,%d)" % [element.element_id, pos.x, pos.y])
 		if element.element_id == "column":
 			types[pos.x][pos.y] = EMPTY_TYPE
 			
