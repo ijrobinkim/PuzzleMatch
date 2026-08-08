@@ -33,6 +33,7 @@ var tile_type_count: int
 var types: Array = []
 var bonuses: Array = []
 var elements_map: Dictionary = {}
+var _step_destroyed_elements: Array = []
 var moves_remaining: int
 var score: int = 0
 var objective: int
@@ -166,6 +167,7 @@ func get_element(cell: Vector2i) -> BaseElement:
 
 func _on_element_destroyed(element: BaseElement) -> void:
 	if element != null and not element.element_id.is_empty():
+		_step_destroyed_elements.append(element)
 		if target_objectives_remaining.has(element.element_id):
 			target_objectives_remaining[element.element_id] = max(0, target_objectives_remaining[element.element_id] - 1)
 			if target_objectives_remaining[element.element_id] <= 0:
@@ -598,6 +600,7 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 				"refills": [],
 				"spinners": [],
 				"rockets": [],
+				"destroyed_elements": _step_destroyed_elements.duplicate(),
 				"is_electro_stagger": true,
 			})
 
@@ -687,6 +690,7 @@ func _execute_special_combo_impl(a: Vector2i, bonus_a: String, b: Vector2i, bonu
 				"refills": [],
 				"spinners": [],
 				"rockets": [],
+				"destroyed_elements": _step_destroyed_elements.duplicate(),
 				"staggered_clears": staggered_clears,
 			})
 
@@ -1311,6 +1315,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 
 	while has_more_work:
 		has_more_work = false
+		_step_destroyed_elements.clear()
 		
 		var matches := find_matches(current_swap_target)
 		var match_infos: Array = []
@@ -1413,6 +1418,7 @@ func _run_cascade_async(swap_target: Vector2i = Vector2i(-1, -1), extra_trigger_
 				"refills": refills,
 				"spinners": emit_spinners,
 				"rockets": emit_rockets,
+				"destroyed_elements": _step_destroyed_elements.duplicate()
 			})
 
 			has_more_work = true

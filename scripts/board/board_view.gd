@@ -473,6 +473,25 @@ func _process_cascade_pipeline() -> void:
 					if delay > max_bomb_delay:
 						max_bomb_delay = delay
 
+			# 0. Destroyed gimmick elements
+			var step_destroyed_elements: Array = step.get("destroyed_elements", [])
+			for elem in step_destroyed_elements:
+				if is_instance_valid(elem) and elem.has_method("visual_destroy"):
+					var cell: Vector2i = elem.grid_position
+					_element_nodes.erase(cell)
+					var delay: float = rocket_delay_map.get(cell, 0.0)
+					if delay == 0.0:
+						delay = bomb_delay_map.get(cell, 0.0)
+					
+					if delay > 0.0:
+						get_tree().create_timer(delay).timeout.connect(func():
+							if is_instance_valid(elem):
+								elem.visual_destroy()
+						)
+					else:
+						elem.visual_destroy()
+					has_gather_tweens = true
+
 			# A. Normal cleared tiles (not part of item creation gathering or spinner impact area)
 			for cell in cleared_cells:
 				if not converging_cells.has(cell):
