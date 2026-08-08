@@ -171,6 +171,27 @@ func get_element(cell: Vector2i) -> BaseElement:
 func _on_element_damaged(element: BaseElement, current_hp: int) -> void:
 	if element != null and current_hp > 0:
 		_step_damaged_elements.append({"element": element, "health": current_hp})
+		
+		# Check if element is birdhouse / bird objective spawner
+		var obj_key := ""
+		if target_objectives_remaining.has(element.element_id):
+			obj_key = element.element_id
+		elif element is SpawnerElement and target_objectives_remaining.has((element as SpawnerElement).item_to_spawn):
+			obj_key = (element as SpawnerElement).item_to_spawn
+			
+		if not obj_key.is_empty() and (element.element_id == "birdhouse" or obj_key == "bird"):
+			target_objectives_remaining[obj_key] = max(0, target_objectives_remaining[obj_key] - 1)
+			log_event.emit("[새집 발동] 🐦 새 출몰! (남은 목표: %d)" % target_objectives_remaining[obj_key])
+			if target_objectives_remaining[obj_key] <= 0:
+				target_objectives_remaining.erase(obj_key)
+				_close_all_birdhouses()
+
+func _close_all_birdhouses() -> void:
+	for cell in elements_map.keys():
+		var elem = elements_map[cell]
+		if elem is BirdhouseElement:
+			(elem as BirdhouseElement).close_birdhouse()
+	log_event.emit("[새집 닫힘] 모든 새집 기능 정지")
 
 func _on_element_destroyed(element: BaseElement) -> void:
 	if element != null and not element.element_id.is_empty():
