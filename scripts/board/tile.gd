@@ -187,7 +187,7 @@ func animate_clear(duration: float = 0.35) -> Tween:
 	stop_animations()
 	_ensure_nodes()
 	_spawn_break_particles()
-	AudioManager.play_sfx(BREAK_SFX[randi() % BREAK_SFX.size()])
+	AudioManager.play_sfx(BREAK_SFX[randi() % BREAK_SFX.size()], randf_range(0.92, 1.08), randf_range(-4.0, 0.0))
 	is_destroying = true
 	if not is_inside_tree():
 		if visual: visual.scale = Vector2.ZERO
