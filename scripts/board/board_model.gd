@@ -964,23 +964,53 @@ func _find_most_common_color() -> int:
 			best_color = color
 	return best_color
 
+func _is_mission_target_element(elem) -> bool:
+	if elem == null or not is_instance_valid(elem):
+		return false
+	if target_objectives_remaining.has(elem.element_id):
+		return true
+	if elem is SpawnerElement and target_objectives_remaining.has((elem as SpawnerElement).item_to_spawn):
+		return true
+	return false
+
 func _pick_random_targets(count: int, exclude: Array) -> Array:
+	var mission_candidates: Array = []
 	var normal_candidates: Array = []
 	var all_candidates: Array = []
 	for x in width:
 		for y in height:
 			var c := Vector2i(x, y)
-			if not exclude.has(c) and types[x][y] != EMPTY_TYPE:
+			if exclude.has(c):
+				continue
+			if _is_mission_target_element(elements_map.get(c)):
+				mission_candidates.append(c)
+			if types[x][y] != EMPTY_TYPE:
 				if bonuses[x][y] == BONUS_NONE:
 					normal_candidates.append(c)
 				all_candidates.append(c)
 
-	normal_candidates.shuffle()
-	if normal_candidates.size() >= count:
-		return normal_candidates.slice(0, count)
+	mission_candidates.shuffle()
+	if mission_candidates.size() >= count:
+		return mission_candidates.slice(0, count)
 
-	all_candidates.shuffle()
-	return all_candidates.slice(0, count)
+	var result: Array = mission_candidates.duplicate()
+
+	normal_candidates.shuffle()
+	for c in normal_candidates:
+		if result.size() >= count:
+			break
+		if not result.has(c):
+			result.append(c)
+
+	if result.size() < count:
+		all_candidates.shuffle()
+		for c in all_candidates:
+			if result.size() >= count:
+				break
+			if not result.has(c):
+				result.append(c)
+
+	return result
 
 func _is_column_blocked_above(x: int, y: int) -> bool:
 	for check_y in range(y - 1, -1, -1):
