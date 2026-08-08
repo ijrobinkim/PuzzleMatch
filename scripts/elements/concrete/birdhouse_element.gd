@@ -29,5 +29,7 @@ func _update_visuals() -> void:
 	super._update_visuals()
 	if _hp_label:
 		_hp_label.visible = false
+	if _bg_rect:
+		_bg_rect.color = Color(0.35, 0.35, 0.4) if is_closed else Color(0.85, 0.5, 0.2)
 	if _icon_label:
-		_icon_label.text = "🚪" if is_closed else "🛖"
+		_icon_label.text = "🔒" if is_closed else "🐦"
