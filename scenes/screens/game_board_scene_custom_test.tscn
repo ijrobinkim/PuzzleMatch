@@ -90,6 +90,10 @@ text = "💣 스팀폭탄"
 layout_mode = 2
 text = "🐉 드래곤상자"
 
+[node name="TrophyCabinetCheck" type="CheckBox" parent="TestControlCanvas/TestPanel/GimmicksRow"]
+layout_mode = 2
+text = "🏆 트로피장식장"
+
 [connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/DeployButton" to="." method="_on_deploy_pressed"]
 [connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/DamageButton" to="." method="_on_damage_all_pressed"]
 [connection signal="pressed" from="TestControlCanvas/TestPanel/ControlsRow/TurnButton" to="." method="_on_pass_turn_pressed"]

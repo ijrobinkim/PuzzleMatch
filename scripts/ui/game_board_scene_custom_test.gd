@@ -14,6 +14,7 @@ extends Node2D
 @onready var _birdhouse_check: CheckBox = $TestControlCanvas/TestPanel/GimmicksRow/BirdhouseCheck
 @onready var _steam_bomb_check: CheckBox = $TestControlCanvas/TestPanel/GimmicksRow/SteamBombCheck
 @onready var _dragon_box_check: CheckBox = $TestControlCanvas/TestPanel/GimmicksRow/DragonBoxCheck
+@onready var _trophy_cabinet_check: CheckBox = $TestControlCanvas/TestPanel/GimmicksRow/TrophyCabinetCheck
 
 var _top_cover: ColorRect
 var _bottom_cover: ColorRect
@@ -88,6 +89,19 @@ func _setup_test_level(active_gimmicks: Array) -> void:
 		for gimmick_id in active_gimmicks:
 			if gimmick_id == "column":
 				continue
+			if gimmick_id == "trophy_cabinet":
+				target_objs["trophy_cabinet"] = 1
+				for idx in range(all_cells.size()):
+					var c: Vector2i = all_cells[idx]
+					if c.x < 7 and c.y < 7 and c.x != column_x and (c.x + 1) != column_x:
+						initial_elems.append({
+							"x": c.x,
+							"y": c.y,
+							"id": "trophy_cabinet"
+						})
+						break
+				continue
+
 			target_objs[gimmick_id] = 4
 			for i in 4:
 				if current_idx < all_cells.size():
@@ -144,6 +158,7 @@ func _on_deploy_pressed() -> void:
 	if _birdhouse_check and _birdhouse_check.button_pressed: active_gimmicks.append("birdhouse")
 	if _steam_bomb_check and _steam_bomb_check.button_pressed: active_gimmicks.append("steam_bomb")
 	if _dragon_box_check and _dragon_box_check.button_pressed: active_gimmicks.append("dragon_box")
+	if _trophy_cabinet_check and _trophy_cabinet_check.button_pressed: active_gimmicks.append("trophy_cabinet")
 
 	_setup_test_level(active_gimmicks)
 	_board_view.start_level(_test_level)
