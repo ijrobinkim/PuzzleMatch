@@ -12,6 +12,7 @@ const DEFAULT_ELEMENT_SCRIPTS := {
 	"birdhouse": "res://scripts/elements/concrete/birdhouse_element.gd",
 	"steam_bomb": "res://scripts/elements/concrete/steam_bomb_element.gd",
 	"dragon_box": "res://scripts/elements/concrete/dragon_box_element.gd",
+	"trophy_cabinet": "res://scripts/elements/concrete/trophy_cabinet_element.gd",
 }
 
 func _init() -> void:

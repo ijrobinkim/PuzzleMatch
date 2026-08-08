@@ -144,7 +144,10 @@ func _render_elements() -> void:
 		if elem != null and is_instance_valid(elem):
 			if not elem.get_parent():
 				add_child(elem)
-			elem.position = Vector2(cell.x + 0.5, cell.y + 0.5) * CELL_SIZE
+				if elem.element_id == "trophy_cabinet":
+					elem.position = Vector2(elem.grid_position.x + 1.0, elem.grid_position.y + 1.0) * CELL_SIZE
+				else:
+					elem.position = Vector2(cell.x + 0.5, cell.y + 0.5) * CELL_SIZE
 			if not elem.is_obstacle and elem.element_id != "ivy":
 				elem.z_index = 1
 			else:

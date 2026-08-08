@@ -101,7 +101,15 @@ func _load_initial_elements(level_data: LevelData) -> void:
 			if not elem_id.is_empty():
 				var elem := factory.create_element(elem_id)
 				if elem:
-					set_element(cell, elem)
+					if elem_id == "trophy_cabinet":
+						for dx in range(2):
+							for dy in range(2):
+								var c := cell + Vector2i(dx, dy)
+								if is_in_bounds(c):
+									set_element(c, elem)
+									types[c.x][c.y] = EMPTY_TYPE
+					else:
+						set_element(cell, elem)
 
 static func get_color_name(type: int) -> String:
 	match type:

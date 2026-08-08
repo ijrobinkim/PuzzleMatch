@@ -15,7 +15,7 @@ func _setup_demo_elements() -> void:
 	elements.clear()
 
 	var factory = ElementFactory.new()
-	var ids: Array[String] = ["box", "snow", "ivy", "column", "birdhouse", "steam_bomb", "dragon_box"]
+	var ids: Array[String] = ["box", "snow", "ivy", "column", "birdhouse", "steam_bomb", "dragon_box", "trophy_cabinet"]
 	
 	var spacing := 140.0
 	var start_x := 100.0
