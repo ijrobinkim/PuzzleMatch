@@ -1,7 +1,9 @@
 extends Node
 ## Game state, versioning and scene transitions.
 
-const GAME_VERSION := "0.0.1.17"
+var GAME_VERSION: String:
+	get:
+		return ProjectSettings.get_setting("application/config/version", "0.0.1.37")
 
 signal scene_changed(scene_path: String)
 signal game_paused(is_paused: bool)
