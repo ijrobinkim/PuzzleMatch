@@ -218,6 +218,8 @@ func damage_adjacent_elements(cleared_cells: Array, normal_match_cells: Array = 
 				if is_in_bounds(neighbor) and elements_map.has(neighbor):
 					var elem: BaseElement = elements_map[neighbor]
 					if elem != null and elem.allows_adjacent_damage and not cleared_cells.has(neighbor):
+						if elem.element_id == "column" and d.x == 0:
+							continue # Skip vertical adjacent damage (up/down) for columns
 						if not damaged_targets.has(elem):
 							damaged_targets[elem] = "normal"
 	
