@@ -979,8 +979,10 @@ func _pick_random_targets(count: int, exclude: Array) -> Array:
 func _is_column_blocked_above(x: int, y: int) -> bool:
 	for check_y in range(y - 1, -1, -1):
 		var check_cell := Vector2i(x, check_y)
-		if elements_map.has(check_cell) and is_instance_valid(elements_map[check_cell]) and not elements_map[check_cell].allows_falling:
-			return true
+		if elements_map.has(check_cell) and is_instance_valid(elements_map[check_cell]):
+			var elem = elements_map[check_cell]
+			if elem.element_id == "column":
+				return true
 	return false
 
 func _apply_gravity(cleared_cells: Array) -> Array:

@@ -91,15 +91,15 @@ func _setup_test_level(active_gimmicks: Array) -> void:
 				continue
 			if gimmick_id == "trophy_cabinet":
 				target_objs["trophy_cabinet"] = 1
-				for idx in range(all_cells.size()):
-					var c: Vector2i = all_cells[idx]
-					if c.x < 7 and c.y < 7 and c.x != column_x and (c.x + 1) != column_x:
-						initial_elems.append({
-							"x": c.x,
-							"y": c.y,
-							"id": "trophy_cabinet"
-						})
-						break
+				var cab_x := 3
+				var cab_y := 3
+				if cab_x == column_x or cab_x + 1 == column_x:
+					cab_x = 0 if column_x > 2 else 5
+				initial_elems.append({
+					"x": cab_x,
+					"y": cab_y,
+					"id": "trophy_cabinet"
+				})
 				continue
 
 			target_objs[gimmick_id] = 4
